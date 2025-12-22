@@ -596,8 +596,16 @@
         // CONFIGURATION - À MODIFIER
         // ============================================
         
-        const API_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyHZLgNmpRZBc7EZyzqj0anfyO04OKlmf0Fv-xR-425OfNVd1rXGrOLsMGOJ2OhAWTs/exec';
-        const ADMIN_SECRET = 'J5OTAVPebativZK3KB2glPdG8TWDZbGU'; // Récupéré après initializeSheet()
+        // ⚠️ REMPLACEZ ces valeurs après avoir déployé Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/VOTRE_ID_DE_DEPLOIEMENT/exec';
+        const ADMIN_SECRET = 'VOTRE_SECRET_ADMIN';
+        
+        // Mode test activé si l'URL n'est pas configurée
+        const TEST_MODE = API_URL.includes('VOTRE_ID');
+        
+        if (TEST_MODE) {
+            console.warn('⚠️ MODE TEST ACTIF - Données de démonstration affichées');
+        }
         
         // ============================================
         // ÉTAT
@@ -633,24 +641,82 @@
         // API
         // ============================================
         
+        // Données de démonstration pour le mode test
+        const DEMO_DATA = {
+            reservations: [
+                { id: 'RES-DEMO1', date: new Date().toISOString().split('T')[0], heure: '12:30', personnes: 4, nom: 'Sophie Dubois', telephone: '+32 475 12 34 56', email: 'sophie@test.be', langue: 'fr', statut: 'en attente', tables: '4' },
+                { id: 'RES-DEMO2', date: new Date().toISOString().split('T')[0], heure: '19:00', personnes: 6, nom: 'Van den Berg', telephone: '+32 486 98 76 54', email: 'vdberg@test.nl', langue: 'nl', statut: 'en attente', tables: '1, 2' },
+                { id: 'RES-DEMO3', date: new Date().toISOString().split('T')[0], heure: '12:00', personnes: 3, nom: 'Marc Dupont', telephone: '+32 470 11 22 33', email: 'marc@test.be', langue: 'fr', statut: 'confirmée', tables: '2' },
+                { id: 'RES-DEMO4', date: new Date().toISOString().split('T')[0], heure: '12:15', personnes: 2, nom: 'Emma Martin', telephone: '+32 480 44 55 66', email: 'emma@test.be', langue: 'fr', statut: 'confirmée', tables: '3' }
+            ],
+            closures: []
+        };
+        
         async function apiCall(action, params = {}, postData = null) {
+            // Mode test : retourne des données de démonstration
+            if (TEST_MODE) {
+                await new Promise(r => setTimeout(r, 500)); // Simule latence
+                
+                if (action === 'getDashboardData') {
+                    const pending = DEMO_DATA.reservations.filter(r => r.statut === 'en attente').length;
+                    const confirmed = DEMO_DATA.reservations.filter(r => r.statut === 'confirmée').length;
+                    const totalGuests = DEMO_DATA.reservations.filter(r => r.statut === 'confirmée').reduce((sum, r) => sum + r.personnes, 0);
+                    
+                    return {
+                        success: true,
+                        date: params.date || new Date().toISOString().split('T')[0],
+                        stats: { pending, confirmed, totalGuests },
+                        reservations: DEMO_DATA.reservations,
+                        closures: DEMO_DATA.closures
+                    };
+                }
+                
+                if (action === 'getClosures') {
+                    return { success: true, closures: DEMO_DATA.closures };
+                }
+                
+                if (action === 'confirmReservation') {
+                    const res = DEMO_DATA.reservations.find(r => r.id === params.id);
+                    if (res) res.statut = 'confirmée';
+                    return { success: true };
+                }
+                
+                if (action === 'refuseReservation') {
+                    const res = DEMO_DATA.reservations.find(r => r.id === params.id);
+                    if (res) res.statut = 'refusée';
+                    return { success: true };
+                }
+                
+                return { success: true };
+            }
+            
+            // Mode production
             let url = `${API_URL}?action=${action}&secret=${ADMIN_SECRET}`;
             Object.keys(params).forEach(key => {
                 url += `&${key}=${encodeURIComponent(params[key])}`;
             });
             
-            const options = { method: postData ? 'POST' : 'GET' };
+            const options = { 
+                method: postData ? 'POST' : 'GET',
+                redirect: 'follow'
+            };
+            
             if (postData) {
-                options.headers = { 'Content-Type': 'application/json' };
+                options.headers = { 'Content-Type': 'text/plain' };
                 options.body = JSON.stringify(postData);
             }
             
             try {
                 const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
                 return await response.json();
             } catch (error) {
                 console.error('Erreur API:', error);
-                return { success: false, error: error.message };
+                return { success: false, error: 'Connexion impossible: ' + error.message };
             }
         }
 
