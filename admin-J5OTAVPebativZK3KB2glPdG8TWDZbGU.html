@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piaf — Tableau de bord</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --noir: #1a1a1a;
+            --blanc: #faf9f7;
+            --creme: #f5f3ef;
+            --or: #c9a959;
+            --or-clair: #e8d9a8;
+            --bordeaux: #722f37;
+            --vert: #2d5a3d;
+            --orange: #d4763a;
+            --gris: #6b6b6b;
+            --gris-clair: #e0ddd8;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--creme);
+            color: var(--noir);
+            min-height: 100vh;
+        }
+
+        header {
+            background: var(--noir);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--blanc);
+            letter-spacing: 0.1em;
+        }
+
+        .logo span { color: var(--or); }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-date {
+            color: var(--gris-clair);
+            font-size: 0.9rem;
+        }
+
+        .refresh-btn {
+            background: var(--or);
+            color: var(--noir);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .refresh-btn:hover { background: #b8954d; }
+
+        .container {
+            display: grid;
+            grid-template-columns: 280px 1fr 340px;
+            min-height: calc(100vh - 60px);
+        }
+
+        .sidebar-left {
+            background: var(--blanc);
+            border-right: 1px solid var(--gris-clair);
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--noir);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 3px;
+            height: 1.2rem;
+            background: var(--or);
+        }
+
+        .calendar {
+            background: var(--creme);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-month {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .calendar-nav button {
+            background: var(--blanc);
+            border: 1px solid var(--gris-clair);
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .calendar-nav button:hover {
+            background: var(--or);
+            border-color: var(--or);
+            color: var(--blanc);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            text-align: center;
+        }
+
+        .calendar-day-name {
+            font-size: 0.7rem;
+            color: var(--gris);
+            padding: 0.25rem;
+            font-weight: 500;
+        }
+
+        .calendar-day {
+            padding: 0.4rem;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calendar-day:hover { background: var(--or-clair); }
+        .calendar-day.today { background: var(--or); color: var(--blanc); font-weight: 600; }
+        .calendar-day.selected { background: var(--noir); color: var(--blanc); }
+        .calendar-day.closed { color: var(--gris-clair); cursor: not-allowed; }
+        .calendar-day.has-reservations::after {
+            content: '';
+            display: block;
+            width: 4px;
+            height: 4px;
+            background: var(--bordeaux);
+            border-radius: 50%;
+            margin: 2px auto 0;
+        }
+
+        .quick-stats {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .stat-card {
+            background: var(--creme);
+            padding: 1rem;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stat-label { font-size: 0.85rem; color: var(--gris); }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+        }
+        .stat-value.pending { color: var(--orange); }
+        .stat-value.confirmed { color: var(--vert); }
+
+        .main-content {
+            padding: 1.5rem 2rem;
+            overflow-y: auto;
+        }
+
+        .date-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .current-date {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .tables-overview { margin-top: 2rem; }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            background: var(--blanc);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+
+        .table-item {
+            aspect-ratio: 1;
+            background: var(--creme);
+            border: 2px solid var(--gris-clair);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .table-item.available { border-color: var(--vert); background: rgba(45, 90, 61, 0.1); }
+        .table-item.occupied { border-color: var(--bordeaux); background: rgba(114, 47, 55, 0.1); }
+
+        .table-number {
+            font-weight: 700;
+            font-size: 1.25rem;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .table-status {
+            font-size: 0.7rem;
+            color: var(--gris);
+            margin-top: 0.25rem;
+        }
+
+        .sidebar-right {
+            background: var(--blanc);
+            border-left: 1px solid var(--gris-clair);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .pending-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .reservation-card {
+            background: var(--creme);
+            border-radius: 10px;
+            padding: 1rem;
+            border-left: 4px solid var(--orange);
+            transition: all 0.2s;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .reservation-card:hover { transform: translateX(4px); }
+        .reservation-card.confirmed { border-left-color: var(--vert); }
+        .reservation-card.refused { border-left-color: var(--bordeaux); opacity: 0.6; }
+
+        .reservation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+        }
+
+        .reservation-name { font-weight: 600; font-size: 1rem; }
+
+        .reservation-guests {
+            background: var(--noir);
+            color: var(--blanc);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .reservation-details {
+            font-size: 0.85rem;
+            color: var(--gris);
+            margin-bottom: 0.75rem;
+        }
+
+        .reservation-details span { display: block; margin-bottom: 0.25rem; }
+        .reservation-time { font-weight: 600; color: var(--noir); }
+        .reservation-tables { font-size: 0.75rem; color: var(--gris); margin-bottom: 0.75rem; }
+
+        .reservation-actions { display: flex; gap: 0.5rem; }
+
+        .btn {
+            flex: 1;
+            padding: 0.6rem 0.75rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-confirm { background: var(--vert); color: var(--blanc); }
+        .btn-confirm:hover { background: #234a31; }
+        .btn-refuse { background: var(--blanc); color: var(--bordeaux); border: 1px solid var(--bordeaux); }
+        .btn-refuse:hover { background: var(--bordeaux); color: var(--blanc); }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal {
+            background: var(--blanc);
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 450px;
+            width: 90%;
+            transform: translateY(20px);
+            transition: transform 0.3s;
+        }
+
+        .modal-overlay.active .modal { transform: translateY(0); }
+
+        .modal-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-subtitle { color: var(--gris); margin-bottom: 1.5rem; }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.5rem; }
+
+        .form-group textarea, .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--gris-clair);
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+        }
+
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-group textarea:focus, .form-group input:focus { outline: none; border-color: var(--or); }
+
+        .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .btn-cancel { background: var(--creme); color: var(--noir); }
+        .btn-send { background: var(--bordeaux); color: var(--blanc); }
+        .btn-add { background: var(--or); color: var(--noir); }
+
+        .closures-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--gris-clair);
+        }
+
+        .closure-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--creme);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .closure-delete {
+            background: none;
+            border: none;
+            color: var(--bordeaux);
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .add-closure-btn {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--blanc);
+            border: 2px dashed var(--gris-clair);
+            border-radius: 8px;
+            color: var(--gris);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .add-closure-btn:hover { border-color: var(--or); color: var(--noir); }
+
+        .empty-state { text-align: center; padding: 2rem; color: var(--gris); }
+        .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.5; }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: var(--gris);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--gris-clair);
+            border-top-color: var(--or);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.75rem;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--noir);
+            color: var(--blanc);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            z-index: 2000;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .toast.success { background: var(--vert); }
+        .toast.error { background: var(--bordeaux); }
+
+        @media (max-width: 1200px) {
+            .container { grid-template-columns: 1fr; }
+            .sidebar-left, .sidebar-right { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">PIAF<span>.</span> <small style="font-size: 0.6em; color: var(--gris-clair);">Admin</small></div>
+        <div class="header-info">
+            <div class="header-date" id="headerDate"></div>
+            <button class="refresh-btn" onclick="loadDashboard()">↻ Actualiser</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <aside class="sidebar-left">
+            <h2 class="section-title">Calendrier</h2>
+            <div class="calendar">
+                <div class="calendar-header">
+                    <span class="calendar-month" id="calendarMonth"></span>
+                    <div class="calendar-nav">
+                        <button onclick="changeMonth(-1)">‹</button>
+                        <button onclick="changeMonth(1)">›</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+
+            <h2 class="section-title">Aujourd'hui</h2>
+            <div class="quick-stats">
+                <div class="stat-card">
+                    <span class="stat-label">En attente</span>
+                    <span class="stat-value pending" id="statPending">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Confirmées</span>
+                    <span class="stat-value confirmed" id="statConfirmed">-</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Couverts</span>
+                    <span class="stat-value" id="statGuests">-</span>
+                </div>
+            </div>
+
+            <div class="closures-section">
+                <h2 class="section-title">Fermetures</h2>
+                <div id="closuresList"></div>
+                <button class="add-closure-btn" onclick="openClosureModal()">+ Ajouter une fermeture</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="date-header">
+                <h1 class="current-date" id="currentDateTitle"></h1>
+            </div>
+
+            <div class="tables-overview">
+                <h2 class="section-title">État des tables</h2>
+                <div class="tables-grid" id="tablesGrid">
+                    <!-- Généré par JS -->
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem;">
+                <h2 class="section-title">Toutes les réservations du jour</h2>
+                <div id="allReservations" class="pending-list"></div>
+            </div>
+        </main>
+
+        <aside class="sidebar-right">
+            <h2 class="section-title">Demandes en attente</h2>
+            <div class="pending-list" id="pendingList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Chargement...
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 2rem;">Confirmées aujourd'hui</h2>
+            <div class="pending-list" id="confirmedList"></div>
+        </aside>
+    </div>
+
+    <!-- Modal Refus -->
+    <div class="modal-overlay" id="refuseModal">
+        <div class="modal">
+            <h2 class="modal-title">Refuser la réservation</h2>
+            <p class="modal-subtitle" id="refuseModalSubtitle"></p>
+            <div class="form-group">
+                <label>Message au client</label>
+                <textarea id="refuseMessage" placeholder="Ex: Nous sommes désolés, mais nous sommes complets..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('refuseModal')">Annuler</button>
+                <button class="btn btn-send" onclick="confirmRefuse()">Envoyer le refus</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Fermeture -->
+    <div class="modal-overlay" id="closureModal">
+        <div class="modal">
+            <h2 class="modal-title">Ajouter une fermeture</h2>
+            <div class="form-group">
+                <label>Date</label>
+                <input type="date" id="closureDate">
+            </div>
+            <div class="form-group">
+                <label>Heure de début</label>
+                <input type="time" id="closureStart" value="12:00">
+            </div>
+            <div class="form-group">
+                <label>Heure de fin</label>
+                <input type="time" id="closureEnd" value="14:30">
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('closureModal')">Annuler</button>
+                <button class="btn btn-add" onclick="addClosure()">Ajouter</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - À MODIFIER
+        // ============================================
+        
+        const API_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyHZLgNmpRZBc7EZyzqj0anfyO04OKlmf0Fv-xR-425OfNVd1rXGrOLsMGOJ2OhAWTs/exec';
+        const ADMIN_SECRET = 'J5OTAVPebativZK3KB2glPdG8TWDZbGU'; // Récupéré après initializeSheet()
+        
+        // ============================================
+        // ÉTAT
+        // ============================================
+        
+        let state = {
+            selectedDate: new Date().toISOString().split('T')[0],
+            currentMonth: new Date(),
+            reservations: [],
+            closures: [],
+            pendingRefuseId: null
+        };
+
+        const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+        // ============================================
+        // INITIALISATION
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            updateHeaderDate();
+            renderCalendar();
+            loadDashboard();
+            loadClosures();
+            
+            // Auto-refresh toutes les 30 secondes
+            setInterval(loadDashboard, 30000);
+        });
+
+        // ============================================
+        // API
+        // ============================================
+        
+        async function apiCall(action, params = {}, postData = null) {
+            let url = `${API_URL}?action=${action}&secret=${ADMIN_SECRET}`;
+            Object.keys(params).forEach(key => {
+                url += `&${key}=${encodeURIComponent(params[key])}`;
+            });
+            
+            const options = { method: postData ? 'POST' : 'GET' };
+            if (postData) {
+                options.headers = { 'Content-Type': 'application/json' };
+                options.body = JSON.stringify(postData);
+            }
+            
+            try {
+                const response = await fetch(url, options);
+                return await response.json();
+            } catch (error) {
+                console.error('Erreur API:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // ============================================
+        // DASHBOARD
+        // ============================================
+        
+        async function loadDashboard() {
+            const data = await apiCall('getDashboardData', { date: state.selectedDate });
+            
+            if (data.success) {
+                state.reservations = data.reservations || [];
+                
+                // Stats
+                document.getElementById('statPending').textContent = data.stats?.pending || 0;
+                document.getElementById('statConfirmed').textContent = data.stats?.confirmed || 0;
+                document.getElementById('statGuests').textContent = data.stats?.totalGuests || 0;
+                
+                renderPendingList();
+                renderConfirmedList();
+                renderAllReservations();
+                renderTables();
+                updateDateTitle();
+            }
+        }
+
+        // ============================================
+        // RÉSERVATIONS
+        // ============================================
+        
+        function renderPendingList() {
+            const container = document.getElementById('pendingList');
+            const pending = state.reservations.filter(r => r.statut === 'en attente');
+            
+            if (pending.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✓</div>
+                        <p>Aucune demande en attente</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = pending.map(r => renderReservationCard(r, true)).join('');
+        }
+
+        function renderConfirmedList() {
+            const container = document.getElementById('confirmedList');
+            const confirmed = state.reservations.filter(r => r.statut === 'confirmée');
+            
+            if (confirmed.length === 0) {
+                container.innerHTML = `<p style="color: var(--gris); text-align: center;">Aucune réservation confirmée</p>`;
+                return;
+            }
+            
+            container.innerHTML = confirmed.map(r => renderReservationCard(r, false)).join('');
+        }
+
+        function renderAllReservations() {
+            const container = document.getElementById('allReservations');
+            const sorted = [...state.reservations].sort((a, b) => a.heure.localeCompare(b.heure));
+            
+            if (sorted.length === 0) {
+                container.innerHTML = `<p style="color: var(--gris);">Aucune réservation pour cette date</p>`;
+                return;
+            }
+            
+            container.innerHTML = sorted.map(r => renderReservationCard(r, r.statut === 'en attente')).join('');
+        }
+
+        function renderReservationCard(r, showActions) {
+            const statusClass = r.statut === 'confirmée' ? 'confirmed' : (r.statut === 'refusée' ? 'refused' : '');
+            
+            return `
+                <div class="reservation-card ${statusClass}" data-id="${r.id}">
+                    <div class="reservation-header">
+                        <span class="reservation-name">${escapeHtml(r.nom)}</span>
+                        <span class="reservation-guests">${r.personnes} pers.</span>
+                    </div>
+                    <div class="reservation-details">
+                        <span class="reservation-time">📅 ${formatDate(r.date)} à ${r.heure}</span>
+                        <span>📞 ${escapeHtml(r.telephone)}</span>
+                        <span>✉️ ${escapeHtml(r.email)}</span>
+                    </div>
+                    ${r.tables ? `<div class="reservation-tables">Tables : ${r.tables}</div>` : ''}
+                    ${showActions ? `
+                        <div class="reservation-actions">
+                            <button class="btn btn-confirm" onclick="confirmReservation('${r.id}')">✓ Confirmer</button>
+                            <button class="btn btn-refuse" onclick="openRefuseModal('${r.id}', '${escapeHtml(r.nom)}')">✗ Refuser</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        async function confirmReservation(id) {
+            const result = await apiCall('confirmReservation', { id });
+            
+            if (result.success) {
+                showToast('Réservation confirmée !', 'success');
+                loadDashboard();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        function openRefuseModal(id, name) {
+            state.pendingRefuseId = id;
+            document.getElementById('refuseModalSubtitle').textContent = 
+                `Un email sera envoyé à ${name} avec votre message.`;
+            document.getElementById('refuseMessage').value = '';
+            document.getElementById('refuseModal').classList.add('active');
+        }
+
+        async function confirmRefuse() {
+            const message = document.getElementById('refuseMessage').value;
+            
+            const result = await apiCall('refuseReservation', 
+                { id: state.pendingRefuseId }, 
+                { message }
+            );
+            
+            closeModal('refuseModal');
+            
+            if (result.success) {
+                showToast('Réservation refusée', 'success');
+                loadDashboard();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
+        // TABLES
+        // ============================================
+        
+        function renderTables() {
+            const container = document.getElementById('tablesGrid');
+            const occupiedTables = new Set();
+            
+            // Trouver les tables occupées
+            state.reservations
+                .filter(r => r.statut === 'confirmée' && r.tables)
+                .forEach(r => {
+                    r.tables.split(',').forEach(t => occupiedTables.add(parseInt(t.trim())));
+                });
+            
+            let html = '';
+            for (let i = 1; i <= 8; i++) {
+                const isOccupied = occupiedTables.has(i);
+                const reservation = state.reservations.find(r => 
+                    r.statut === 'confirmée' && r.tables && r.tables.includes(i.toString())
+                );
+                
+                html += `
+                    <div class="table-item ${isOccupied ? 'occupied' : 'available'}">
+                        <span class="table-number">${i}</span>
+                        <span class="table-status">${isOccupied ? (reservation?.nom || 'Occupée') : 'Libre'}</span>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // ============================================
+        // FERMETURES
+        // ============================================
+        
+        async function loadClosures() {
+            const result = await apiCall('getClosures');
+            if (result.success) {
+                state.closures = result.closures || [];
+                renderClosures();
+            }
+        }
+
+        function renderClosures() {
+            const container = document.getElementById('closuresList');
+            
+            // Filtrer les fermetures futures
+            const today = new Date().toISOString().split('T')[0];
+            const futurClosures = state.closures.filter(c => c.date >= today);
+            
+            if (futurClosures.length === 0) {
+                container.innerHTML = '<p style="color: var(--gris); font-size: 0.85rem;">Aucune fermeture programmée</p>';
+                return;
+            }
+            
+            container.innerHTML = futurClosures.map(c => `
+                <div class="closure-item">
+                    <span>${formatDate(c.date)} ${c.start}-${c.end}</span>
+                    <button class="closure-delete" onclick="deleteClosure('${c.id}')">×</button>
+                </div>
+            `).join('');
+        }
+
+        function openClosureModal() {
+            document.getElementById('closureDate').value = state.selectedDate;
+            document.getElementById('closureModal').classList.add('active');
+        }
+
+        async function addClosure() {
+            const date = document.getElementById('closureDate').value;
+            const start = document.getElementById('closureStart').value;
+            const end = document.getElementById('closureEnd').value;
+            
+            const result = await apiCall('addClosure', {}, { date, startTime: start, endTime: end });
+            
+            closeModal('closureModal');
+            
+            if (result.success) {
+                showToast('Fermeture ajoutée', 'success');
+                loadClosures();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        async function deleteClosure(id) {
+            const result = await apiCall('removeClosure', { id });
+            
+            if (result.success) {
+                showToast('Fermeture supprimée', 'success');
+                loadClosures();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
+        // CALENDRIER
+        // ============================================
+        
+        function renderCalendar() {
+            const year = state.currentMonth.getFullYear();
+            const month = state.currentMonth.getMonth();
+            
+            document.getElementById('calendarMonth').textContent = `${MONTHS[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = firstDay.getDay();
+            
+            let html = DAYS.map(d => `<div class="calendar-day-name">${d}</div>`).join('');
+            
+            // Jours vides avant
+            for (let i = 0; i < startDay; i++) {
+                html += '<div class="calendar-day"></div>';
+            }
+            
+            // Jours du mois
+            const today = new Date().toISOString().split('T')[0];
+            
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const isClosed = dayOfWeek === 1 || dayOfWeek === 2; // Lundi, Mardi
+                
+                let classes = 'calendar-day';
+                if (dateStr === today) classes += ' today';
+                if (dateStr === state.selectedDate) classes += ' selected';
+                if (isClosed) classes += ' closed';
+                
+                html += `<div class="${classes}" onclick="selectDate('${dateStr}')">${day}</div>`;
+            }
+            
+            document.getElementById('calendarGrid').innerHTML = html;
+        }
+
+        function changeMonth(delta) {
+            state.currentMonth.setMonth(state.currentMonth.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function selectDate(dateStr) {
+            state.selectedDate = dateStr;
+            renderCalendar();
+            loadDashboard();
+        }
+
+        // ============================================
+        // UI HELPERS
+        // ============================================
+        
+        function updateHeaderDate() {
+            const now = new Date();
+            document.getElementById('headerDate').textContent = 
+                `${DAYS[now.getDay()]} ${now.getDate()} ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+        }
+
+        function updateDateTitle() {
+            const date = new Date(state.selectedDate);
+            document.getElementById('currentDateTitle').textContent = 
+                `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return `${date.getDate()}/${date.getMonth() + 1}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // Fermer modals au clic extérieur
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', e => {
+                if (e.target === modal) closeModal(modal.id);
+            });
+        });
+    </script>
+</body>
+</html>
