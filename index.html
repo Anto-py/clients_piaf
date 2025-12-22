@@ -712,7 +712,15 @@
         // CONFIGURATION - À MODIFIER
         // ============================================
         
-        const API_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyHZLgNmpRZBc7EZyzqj0anfyO04OKlmf0Fv-xR-425OfNVd1rXGrOLsMGOJ2OhAWTs/exec';
+        // ⚠️ REMPLACEZ cette URL par votre URL de déploiement Google Apps Script
+        const API_URL = 'https://script.google.com/macros/s/VOTRE_ID_DE_DEPLOIEMENT/exec';
+        
+        // Mode test activé automatiquement si l'URL n'est pas configurée
+        const TEST_MODE = API_URL.includes('VOTRE_ID');
+        
+        if (TEST_MODE) {
+            console.warn('⚠️ MODE TEST ACTIF - L\'API n\'est pas configurée. Les créneaux s\'affichent en mode hors-ligne.');
+        }
         
         // ============================================
         // ÉTAT
@@ -856,35 +864,72 @@
         });
 
         // ============================================
-        // API
+        // API (compatible Google Apps Script + CORS)
         // ============================================
         
         async function fetchAvailability(dateStr, guests) {
+            // Mode test : retourne null pour utiliser le fallback offline
+            if (TEST_MODE) {
+                return null;
+            }
+            
             try {
                 const url = `${API_URL}?action=getAvailability&date=${dateStr}&guests=${guests}`;
-                const response = await fetch(url);
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP ${response.status}`);
+                }
+                
                 const data = await response.json();
                 return data;
             } catch (error) {
-                console.error('Erreur API:', error);
-                return null;
+                console.error('Erreur API getAvailability:', error);
+                return null; // Utilise le fallback offline
             }
         }
 
         async function sendReservation(reservationData) {
+            // Mode test : simule une réservation réussie
+            if (TEST_MODE) {
+                console.log('📝 Réservation simulée:', reservationData);
+                await new Promise(r => setTimeout(r, 1000)); // Simule un délai
+                return { 
+                    success: true, 
+                    id: 'TEST-' + Date.now()
+                };
+            }
+            
             try {
-                const response = await fetch(`${API_URL}?action=createReservation`, {
+                const url = `${API_URL}?action=createReservation`;
+                
+                const response = await fetch(url, {
                     method: 'POST',
+                    redirect: 'follow',
                     headers: {
-                        'Content-Type': 'application/json',
+                        'Content-Type': 'text/plain',
                     },
                     body: JSON.stringify(reservationData)
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`Erreur HTTP ${response.status}`);
+                }
+                
                 const data = await response.json();
                 return data;
             } catch (error) {
-                console.error('Erreur API:', error);
-                return { success: false, error: error.message };
+                console.error('Erreur API createReservation:', error);
+                
+                let errorMessage = 'Connexion impossible au serveur.';
+                if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Impossible de contacter le serveur. Vérifiez votre connexion ou la configuration de l\'API.';
+                }
+                
+                return { success: false, error: errorMessage };
             }
         }
 
