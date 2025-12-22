@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piaf — Réservation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --noir: #1a1a1a;
+            --blanc: #faf9f7;
+            --creme: #f5f3ef;
+            --or: #c9a959;
+            --or-clair: #e8d9a8;
+            --bordeaux: #722f37;
+            --vert: #2d5a3d;
+            --gris: #6b6b6b;
+            --gris-clair: #e0ddd8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--creme);
+            color: var(--noir);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: var(--noir);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--blanc);
+            letter-spacing: 0.1em;
+            text-decoration: none;
+        }
+
+        .logo span {
+            color: var(--or);
+        }
+
+        .lang-selector {
+            display: flex;
+            gap: 0.25rem;
+            background: rgba(255,255,255,0.1);
+            padding: 0.25rem;
+            border-radius: 6px;
+        }
+
+        .lang-btn {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            background: transparent;
+            color: var(--gris-clair);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .lang-btn.active {
+            background: var(--or);
+            color: var(--noir);
+        }
+
+        .lang-btn:hover:not(.active) {
+            color: var(--blanc);
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, var(--noir) 0%, #2a2a2a 100%);
+            padding: 3rem 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c9a959' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.5;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--blanc);
+            margin-bottom: 0.5rem;
+        }
+
+        .hero p {
+            color: var(--or);
+            font-size: 1.1rem;
+            letter-spacing: 0.05em;
+        }
+
+        /* Container principal */
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        /* Étapes */
+        .steps {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            color: var(--gris);
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--gris-clair);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .step.active .step-number {
+            background: var(--or);
+            color: var(--blanc);
+        }
+
+        .step.completed .step-number {
+            background: var(--vert);
+            color: var(--blanc);
+        }
+
+        .step.active {
+            color: var(--noir);
+            font-weight: 500;
+        }
+
+        /* Cards */
+        .card {
+            background: var(--blanc);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .card-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-title::before {
+            content: '';
+            width: 3px;
+            height: 1.25rem;
+            background: var(--or);
+        }
+
+        /* Sélecteur de date */
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.5rem;
+        }
+
+        .date-option {
+            padding: 0.75rem 0.5rem;
+            border: 2px solid var(--gris-clair);
+            border-radius: 8px;
+            background: var(--blanc);
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .date-option:hover:not(.disabled) {
+            border-color: var(--or);
+        }
+
+        .date-option.selected {
+            border-color: var(--noir);
+            background: var(--noir);
+            color: var(--blanc);
+        }
+
+        .date-option.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            text-decoration: line-through;
+        }
+
+        .date-day {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+        }
+
+        .date-number {
+            font-size: 1.25rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+        }
+
+        .date-month {
+            font-size: 0.7rem;
+            color: var(--gris);
+        }
+
+        .date-option.selected .date-month {
+            color: var(--or);
+        }
+
+        /* Sélecteur de personnes */
+        .guests-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+        }
+
+        .guests-btn {
+            width: 48px;
+            height: 48px;
+            border: 2px solid var(--gris-clair);
+            border-radius: 50%;
+            background: var(--blanc);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .guests-btn:hover:not(:disabled) {
+            border-color: var(--or);
+            background: var(--or-clair);
+        }
+
+        .guests-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .guests-count {
+            text-align: center;
+        }
+
+        .guests-number {
+            font-size: 3rem;
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            line-height: 1;
+        }
+
+        .guests-label {
+            font-size: 0.85rem;
+            color: var(--gris);
+        }
+
+        /* Sélecteur d'heure */
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .time-option {
+            padding: 0.75rem;
+            border: 2px solid var(--gris-clair);
+            border-radius: 8px;
+            background: var(--blanc);
+            cursor: pointer;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .time-option:hover:not(.disabled) {
+            border-color: var(--or);
+        }
+
+        .time-option.selected {
+            border-color: var(--noir);
+            background: var(--noir);
+            color: var(--blanc);
+        }
+
+        .time-option.disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            background: var(--gris-clair);
+        }
+
+        .service-label {
+            font-size: 0.8rem;
+            color: var(--gris);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1rem 0 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--gris-clair);
+        }
+
+        /* Formulaire */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group label .required {
+            color: var(--bordeaux);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--gris-clair);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--or);
+        }
+
+        .form-input::placeholder {
+            color: var(--gris);
+        }
+
+        /* Récapitulatif */
+        .summary {
+            background: var(--noir);
+            color: var(--blanc);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .summary-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--or);
+        }
+
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            color: var(--gris-clair);
+        }
+
+        .summary-value {
+            font-weight: 500;
+        }
+
+        /* Boutons */
+        .btn-primary {
+            width: 100%;
+            padding: 1rem 2rem;
+            background: var(--or);
+            color: var(--noir);
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 1rem;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #b8954d;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Notice */
+        .notice {
+            background: var(--or-clair);
+            border-left: 4px solid var(--or);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            font-size: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .notice-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        /* Confirmation */
+        .confirmation {
+            text-align: center;
+            padding: 3rem 1.5rem;
+        }
+
+        .confirmation-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--or-clair);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        .confirmation h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .confirmation p {
+            color: var(--gris);
+            line-height: 1.6;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gris);
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--gris-clair);
+            border-top-color: var(--or);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error */
+        .error-message {
+            background: rgba(114, 47, 55, 0.1);
+            border-left: 4px solid var(--bordeaux);
+            padding: 1rem;
+            border-radius: 0 8px 8px 0;
+            color: var(--bordeaux);
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gris);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--noir);
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .hero h1 {
+                font-size: 1.75rem;
+            }
+
+            .date-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .time-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .steps {
+                flex-wrap: wrap;
+            }
+
+            .step span:not(.step-number) {
+                display: none;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .card:nth-child(2) { animation-delay: 0.1s; }
+        .card:nth-child(3) { animation-delay: 0.2s; }
+        .card:nth-child(4) { animation-delay: 0.3s; }
+
+        /* Hidden */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo">PIAF<span>.</span></a>
+        <div class="lang-selector">
+            <button class="lang-btn active" onclick="setLang('fr')">FR</button>
+            <button class="lang-btn" onclick="setLang('en')">EN</button>
+            <button class="lang-btn" onclick="setLang('nl')">NL</button>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-content">
+            <h1 data-i18n="hero.title">Réserver une table</h1>
+            <p data-i18n="hero.subtitle">Pop-up restaurant • Bruxelles</p>
+        </div>
+    </section>
+
+    <div class="container" id="bookingForm">
+        <div class="steps">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span data-i18n="steps.when">Quand</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span data-i18n="steps.who">Qui</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="step-number">3</span>
+                <span data-i18n="steps.contact">Contact</span>
+            </div>
+        </div>
+
+        <div id="errorContainer" class="hidden"></div>
+
+        <!-- Date -->
+        <div class="card">
+            <h2 class="card-title" data-i18n="date.title">Choisissez une date</h2>
+            <div class="date-grid" id="dateGrid">
+                <!-- Généré par JS -->
+            </div>
+        </div>
+
+        <!-- Nombre de personnes -->
+        <div class="card">
+            <h2 class="card-title" data-i18n="guests.title">Nombre de personnes</h2>
+            <div class="guests-selector">
+                <button class="guests-btn" onclick="changeGuests(-1)" id="guestsMinus">−</button>
+                <div class="guests-count">
+                    <div class="guests-number" id="guestsNumber">2</div>
+                    <div class="guests-label" data-i18n="guests.label">personnes</div>
+                </div>
+                <button class="guests-btn" onclick="changeGuests(1)" id="guestsPlus">+</button>
+            </div>
+        </div>
+
+        <!-- Heure -->
+        <div class="card">
+            <h2 class="card-title" data-i18n="time.title">Choisissez un créneau</h2>
+            <div id="timeSlots">
+                <div class="loading" id="timeSlotsLoading" style="display: none;">
+                    <div class="spinner"></div>
+                    <span data-i18n="loading">Chargement des disponibilités...</span>
+                </div>
+                <div id="timeSlotsContent">
+                    <p style="color: var(--gris); text-align: center;" data-i18n="time.selectDate">
+                        Sélectionnez d'abord une date
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordonnées -->
+        <div class="card">
+            <h2 class="card-title" data-i18n="contact.title">Vos coordonnées</h2>
+            
+            <div class="form-group">
+                <label data-i18n="contact.name">Nom ou prénom <span class="required">*</span></label>
+                <input type="text" class="form-input" id="clientName" placeholder="Marie Dupont">
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="contact.phone">Téléphone <span class="required">*</span></label>
+                <input type="tel" class="form-input" id="clientPhone" placeholder="+32 4XX XX XX XX">
+            </div>
+
+            <div class="form-group">
+                <label data-i18n="contact.email">Email <span class="required">*</span></label>
+                <input type="email" class="form-input" id="clientEmail" placeholder="marie@exemple.be">
+            </div>
+        </div>
+
+        <!-- Récapitulatif -->
+        <div class="summary">
+            <div class="summary-title" data-i18n="summary.title">Récapitulatif</div>
+            <div class="summary-row">
+                <span class="summary-label" data-i18n="summary.date">Date</span>
+                <span class="summary-value" id="summaryDate">—</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label" data-i18n="summary.time">Heure</span>
+                <span class="summary-value" id="summaryTime">—</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label" data-i18n="summary.guests">Personnes</span>
+                <span class="summary-value" id="summaryGuests">2</span>
+            </div>
+        </div>
+
+        <button class="btn-primary" id="submitBtn" onclick="submitBooking()" disabled data-i18n="submit">
+            Envoyer ma demande
+        </button>
+
+        <div class="notice">
+            <div class="notice-title" data-i18n="notice.title">📌 Bon à savoir</div>
+            <span data-i18n="notice.text">Votre réservation sera confirmée par email après validation par notre équipe. Pour toute modification ou annulation, contactez-nous directement.</span>
+        </div>
+    </div>
+
+    <!-- Confirmation -->
+    <div class="container hidden" id="confirmationScreen">
+        <div class="card confirmation">
+            <div class="confirmation-icon">🕊️</div>
+            <h2 data-i18n="confirmation.title">Demande envoyée !</h2>
+            <p data-i18n="confirmation.text">
+                Merci pour votre demande de réservation. Vous recevrez un email de confirmation dès que notre équipe aura validé votre réservation.
+            </p>
+        </div>
+    </div>
+
+    <footer>
+        <p>Piaf • Bruxelles • <a href="tel:+3225001234">+32 2 500 12 34</a></p>
+    </footer>
+
+    <script>
+        // ============================================
+        // CONFIGURATION - À MODIFIER
+        // ============================================
+        
+        const API_URL = 'https://script.google.com/macros/s/https://script.google.com/macros/s/AKfycbyHZLgNmpRZBc7EZyzqj0anfyO04OKlmf0Fv-xR-425OfNVd1rXGrOLsMGOJ2OhAWTs/exec';
+        
+        // ============================================
+        // ÉTAT
+        // ============================================
+        
+        const state = {
+            date: null,
+            time: null,
+            guests: 2,
+            name: '',
+            phone: '',
+            email: '',
+            lang: 'fr',
+            availableSlots: []
+        };
+
+        // Horaires pour affichage local (fallback)
+        const schedule = {
+            0: { open: true, services: [{ label: 'Brunch', start: '11:00', end: '15:00' }] },
+            1: { open: false },
+            2: { open: false },
+            3: { open: true, services: [{ label: 'Midi', start: '12:00', end: '14:30' }] },
+            4: { open: true, services: [{ label: 'Soir', start: '18:30', end: '21:30' }] },
+            5: { open: true, services: [{ label: 'Soir', start: '18:30', end: '21:30' }] },
+            6: { open: true, services: [{ label: 'Brunch', start: '11:00', end: '15:00' }] }
+        };
+
+        // ============================================
+        // TRADUCTIONS
+        // ============================================
+        
+        const i18n = {
+            fr: {
+                'hero.title': 'Réserver une table',
+                'hero.subtitle': 'Pop-up restaurant • Bruxelles',
+                'steps.when': 'Quand',
+                'steps.who': 'Qui',
+                'steps.contact': 'Contact',
+                'date.title': 'Choisissez une date',
+                'guests.title': 'Nombre de personnes',
+                'guests.label': 'personnes',
+                'time.title': 'Choisissez un créneau',
+                'time.selectDate': 'Sélectionnez d\'abord une date',
+                'time.noSlots': 'Aucun créneau disponible pour cette date',
+                'contact.title': 'Vos coordonnées',
+                'contact.name': 'Nom ou prénom <span class="required">*</span>',
+                'contact.phone': 'Téléphone <span class="required">*</span>',
+                'contact.email': 'Email <span class="required">*</span>',
+                'summary.title': 'Récapitulatif',
+                'summary.date': 'Date',
+                'summary.time': 'Heure',
+                'summary.guests': 'Personnes',
+                'submit': 'Envoyer ma demande',
+                'submitting': 'Envoi en cours...',
+                'notice.title': '📌 Bon à savoir',
+                'notice.text': 'Votre réservation sera confirmée par email après validation par notre équipe. Pour toute modification ou annulation, contactez-nous directement.',
+                'confirmation.title': 'Demande envoyée !',
+                'confirmation.text': 'Merci pour votre demande de réservation. Vous recevrez un email de confirmation dès que notre équipe aura validé votre réservation.',
+                'loading': 'Chargement des disponibilités...',
+                'error.generic': 'Une erreur est survenue. Veuillez réessayer.',
+                'error.slotUnavailable': 'Ce créneau n\'est plus disponible. Veuillez en choisir un autre.',
+                'closed': 'Fermé',
+                'days': ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
+                'months': ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
+            },
+            en: {
+                'hero.title': 'Book a table',
+                'hero.subtitle': 'Pop-up restaurant • Brussels',
+                'steps.when': 'When',
+                'steps.who': 'Who',
+                'steps.contact': 'Contact',
+                'date.title': 'Choose a date',
+                'guests.title': 'Number of guests',
+                'guests.label': 'guests',
+                'time.title': 'Choose a time slot',
+                'time.selectDate': 'Select a date first',
+                'time.noSlots': 'No slots available for this date',
+                'contact.title': 'Your details',
+                'contact.name': 'Name <span class="required">*</span>',
+                'contact.phone': 'Phone <span class="required">*</span>',
+                'contact.email': 'Email <span class="required">*</span>',
+                'summary.title': 'Summary',
+                'summary.date': 'Date',
+                'summary.time': 'Time',
+                'summary.guests': 'Guests',
+                'submit': 'Send my request',
+                'submitting': 'Sending...',
+                'notice.title': '📌 Good to know',
+                'notice.text': 'Your reservation will be confirmed by email after validation by our team. For any changes or cancellations, please contact us directly.',
+                'confirmation.title': 'Request sent!',
+                'confirmation.text': 'Thank you for your reservation request. You will receive a confirmation email once our team has validated your reservation.',
+                'loading': 'Loading availability...',
+                'error.generic': 'An error occurred. Please try again.',
+                'error.slotUnavailable': 'This slot is no longer available. Please choose another one.',
+                'closed': 'Closed',
+                'days': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            },
+            nl: {
+                'hero.title': 'Reserveer een tafel',
+                'hero.subtitle': 'Pop-up restaurant • Brussel',
+                'steps.when': 'Wanneer',
+                'steps.who': 'Wie',
+                'steps.contact': 'Contact',
+                'date.title': 'Kies een datum',
+                'guests.title': 'Aantal personen',
+                'guests.label': 'personen',
+                'time.title': 'Kies een tijdslot',
+                'time.selectDate': 'Selecteer eerst een datum',
+                'time.noSlots': 'Geen beschikbare slots voor deze datum',
+                'contact.title': 'Uw gegevens',
+                'contact.name': 'Naam <span class="required">*</span>',
+                'contact.phone': 'Telefoon <span class="required">*</span>',
+                'contact.email': 'Email <span class="required">*</span>',
+                'summary.title': 'Samenvatting',
+                'summary.date': 'Datum',
+                'summary.time': 'Tijd',
+                'summary.guests': 'Personen',
+                'submit': 'Verstuur mijn aanvraag',
+                'submitting': 'Verzenden...',
+                'notice.title': '📌 Goed om te weten',
+                'notice.text': 'Uw reservering wordt per e-mail bevestigd na validatie door ons team. Neem voor wijzigingen of annuleringen rechtstreeks contact met ons op.',
+                'confirmation.title': 'Aanvraag verzonden!',
+                'confirmation.text': 'Bedankt voor uw reserveringsaanvraag. U ontvangt een bevestigingsmail zodra ons team uw reservering heeft gevalideerd.',
+                'loading': 'Beschikbaarheid laden...',
+                'error.generic': 'Er is een fout opgetreden. Probeer het opnieuw.',
+                'error.slotUnavailable': 'Dit tijdslot is niet meer beschikbaar. Kies een ander.',
+                'closed': 'Gesloten',
+                'days': ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'],
+                'months': ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+            }
+        };
+
+        // ============================================
+        // INITIALISATION
+        // ============================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            generateDates();
+            setupFormListeners();
+        });
+
+        // ============================================
+        // API
+        // ============================================
+        
+        async function fetchAvailability(dateStr, guests) {
+            try {
+                const url = `${API_URL}?action=getAvailability&date=${dateStr}&guests=${guests}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Erreur API:', error);
+                return null;
+            }
+        }
+
+        async function sendReservation(reservationData) {
+            try {
+                const response = await fetch(`${API_URL}?action=createReservation`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(reservationData)
+                });
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Erreur API:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // ============================================
+        // DATES
+        // ============================================
+        
+        function generateDates() {
+            const grid = document.getElementById('dateGrid');
+            grid.innerHTML = '';
+            const today = new Date();
+            
+            for (let i = 0; i < 10; i++) {
+                const date = new Date(today);
+                date.setDate(today.getDate() + i);
+                
+                const dayOfWeek = date.getDay();
+                const isOpen = schedule[dayOfWeek].open;
+                const t = i18n[state.lang];
+                
+                const div = document.createElement('div');
+                div.className = `date-option ${!isOpen ? 'disabled' : ''}`;
+                div.innerHTML = `
+                    <div class="date-day">${t.days[dayOfWeek]}</div>
+                    <div class="date-number">${date.getDate()}</div>
+                    <div class="date-month">${t.months[date.getMonth()]}</div>
+                `;
+                
+                if (isOpen) {
+                    div.dataset.date = date.toISOString().split('T')[0];
+                    div.dataset.day = dayOfWeek;
+                    div.onclick = () => selectDate(div);
+                }
+                
+                grid.appendChild(div);
+            }
+        }
+
+        async function selectDate(el) {
+            document.querySelectorAll('.date-option').forEach(d => d.classList.remove('selected'));
+            el.classList.add('selected');
+            
+            state.date = el.dataset.date;
+            state.time = null;
+            
+            // Afficher le loading
+            document.getElementById('timeSlotsLoading').style.display = 'block';
+            document.getElementById('timeSlotsContent').innerHTML = '';
+            
+            // Récupérer les disponibilités depuis l'API
+            const availability = await fetchAvailability(state.date, state.guests);
+            
+            document.getElementById('timeSlotsLoading').style.display = 'none';
+            
+            if (availability && availability.success && availability.slots) {
+                state.availableSlots = availability.slots;
+                renderTimeSlots(parseInt(el.dataset.day));
+            } else {
+                // Fallback: afficher les créneaux sans vérification en temps réel
+                renderTimeSlotsOffline(parseInt(el.dataset.day));
+            }
+            
+            updateSummary();
+            updateSteps(2);
+        }
+
+        // ============================================
+        // CRÉNEAUX HORAIRES
+        // ============================================
+        
+        function renderTimeSlots(dayOfWeek) {
+            const container = document.getElementById('timeSlotsContent');
+            container.innerHTML = '';
+            
+            const daySchedule = schedule[dayOfWeek];
+            if (!daySchedule.open) return;
+            
+            const t = i18n[state.lang];
+            
+            // Grouper les slots par service
+            daySchedule.services.forEach(service => {
+                const label = document.createElement('div');
+                label.className = 'service-label';
+                label.textContent = service.label;
+                container.appendChild(label);
+                
+                const grid = document.createElement('div');
+                grid.className = 'time-grid';
+                
+                // Filtrer les slots disponibles pour ce service
+                const serviceSlots = state.availableSlots.filter(slot => {
+                    const slotMinutes = timeToMinutes(slot.time);
+                    const startMinutes = timeToMinutes(service.start);
+                    const endMinutes = timeToMinutes(service.end);
+                    return slotMinutes >= startMinutes && slotMinutes < endMinutes;
+                });
+                
+                if (serviceSlots.length === 0) {
+                    const noSlots = document.createElement('p');
+                    noSlots.style.color = 'var(--gris)';
+                    noSlots.textContent = t['time.noSlots'];
+                    container.appendChild(noSlots);
+                    return;
+                }
+                
+                serviceSlots.forEach(slot => {
+                    const div = document.createElement('div');
+                    div.className = `time-option ${!slot.available ? 'disabled' : ''}`;
+                    div.textContent = slot.time;
+                    div.dataset.time = slot.time;
+                    
+                    if (slot.available) {
+                        div.onclick = () => selectTime(div);
+                    }
+                    
+                    grid.appendChild(div);
+                });
+                
+                container.appendChild(grid);
+            });
+        }
+
+        function renderTimeSlotsOffline(dayOfWeek) {
+            const container = document.getElementById('timeSlotsContent');
+            container.innerHTML = '';
+            
+            const daySchedule = schedule[dayOfWeek];
+            if (!daySchedule.open) return;
+            
+            daySchedule.services.forEach(service => {
+                const label = document.createElement('div');
+                label.className = 'service-label';
+                label.textContent = service.label;
+                container.appendChild(label);
+                
+                const grid = document.createElement('div');
+                grid.className = 'time-grid';
+                
+                const slots = generateSlots(service.start, service.end);
+                slots.forEach(slot => {
+                    const div = document.createElement('div');
+                    div.className = 'time-option';
+                    div.textContent = slot;
+                    div.dataset.time = slot;
+                    div.onclick = () => selectTime(div);
+                    grid.appendChild(div);
+                });
+                
+                container.appendChild(grid);
+            });
+        }
+
+        function generateSlots(start, end) {
+            const slots = [];
+            const [startH, startM] = start.split(':').map(Number);
+            const [endH, endM] = end.split(':').map(Number);
+            
+            let current = startH * 60 + startM;
+            const endMinutes = endH * 60 + endM - 90;
+            
+            while (current <= endMinutes) {
+                const h = Math.floor(current / 60);
+                const m = current % 60;
+                slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
+                current += 15;
+            }
+            
+            return slots;
+        }
+
+        function timeToMinutes(time) {
+            const [h, m] = time.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        function selectTime(el) {
+            document.querySelectorAll('.time-option').forEach(t => t.classList.remove('selected'));
+            el.classList.add('selected');
+            state.time = el.dataset.time;
+            updateSummary();
+            updateSteps(3);
+            validateForm();
+        }
+
+        // ============================================
+        // PERSONNES
+        // ============================================
+        
+        async function changeGuests(delta) {
+            const newValue = state.guests + delta;
+            if (newValue >= 2 && newValue <= 8) {
+                state.guests = newValue;
+                document.getElementById('guestsNumber').textContent = state.guests;
+                document.getElementById('guestsMinus').disabled = state.guests <= 2;
+                document.getElementById('guestsPlus').disabled = state.guests >= 8;
+                updateSummary();
+                
+                // Recharger les disponibilités si une date est sélectionnée
+                if (state.date) {
+                    state.time = null;
+                    document.getElementById('timeSlotsLoading').style.display = 'block';
+                    document.getElementById('timeSlotsContent').innerHTML = '';
+                    
+                    const availability = await fetchAvailability(state.date, state.guests);
+                    
+                    document.getElementById('timeSlotsLoading').style.display = 'none';
+                    
+                    if (availability && availability.success && availability.slots) {
+                        state.availableSlots = availability.slots;
+                        const selectedDate = document.querySelector('.date-option.selected');
+                        if (selectedDate) {
+                            renderTimeSlots(parseInt(selectedDate.dataset.day));
+                        }
+                    }
+                    
+                    validateForm();
+                }
+            }
+        }
+
+        // ============================================
+        // FORMULAIRE
+        // ============================================
+        
+        function setupFormListeners() {
+            ['clientName', 'clientPhone', 'clientEmail'].forEach(id => {
+                document.getElementById(id).addEventListener('input', (e) => {
+                    state[id.replace('client', '').toLowerCase()] = e.target.value;
+                    validateForm();
+                });
+            });
+        }
+
+        function validateForm() {
+            const isValid = state.date && state.time && 
+                state.name.length > 0 && 
+                state.phone.length > 0 && 
+                state.email.includes('@');
+            
+            document.getElementById('submitBtn').disabled = !isValid;
+        }
+
+        // ============================================
+        // ENVOI
+        // ============================================
+        
+        async function submitBooking() {
+            const btn = document.getElementById('submitBtn');
+            const t = i18n[state.lang];
+            
+            btn.disabled = true;
+            btn.textContent = t['submitting'];
+            
+            hideError();
+            
+            const result = await sendReservation({
+                date: state.date,
+                time: state.time,
+                guests: state.guests,
+                name: state.name,
+                phone: state.phone,
+                email: state.email,
+                lang: state.lang
+            });
+            
+            if (result.success) {
+                document.getElementById('bookingForm').classList.add('hidden');
+                document.getElementById('confirmationScreen').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                showError(result.error || t['error.generic']);
+                btn.disabled = false;
+                btn.textContent = t['submit'];
+            }
+        }
+
+        // ============================================
+        // ERREURS
+        // ============================================
+        
+        function showError(message) {
+            const container = document.getElementById('errorContainer');
+            container.innerHTML = `<div class="error-message">${message}</div>`;
+            container.classList.remove('hidden');
+            container.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideError() {
+            const container = document.getElementById('errorContainer');
+            container.classList.add('hidden');
+            container.innerHTML = '';
+        }
+
+        // ============================================
+        // UI
+        // ============================================
+        
+        function updateSummary() {
+            const t = i18n[state.lang];
+            
+            if (state.date) {
+                const date = new Date(state.date);
+                document.getElementById('summaryDate').textContent = 
+                    `${t.days[date.getDay()]} ${date.getDate()} ${t.months[date.getMonth()]}`;
+            }
+            
+            document.getElementById('summaryTime').textContent = state.time || '—';
+            document.getElementById('summaryGuests').textContent = state.guests;
+        }
+
+        function updateSteps(current) {
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                step.classList.remove('active', 'completed');
+                if (stepNum < current) step.classList.add('completed');
+                if (stepNum === current) step.classList.add('active');
+            });
+        }
+
+        function setLang(lang) {
+            state.lang = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+            
+            const t = i18n[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (t[key]) el.innerHTML = t[key];
+            });
+            
+            generateDates();
+            updateSummary();
+        }
+    </script>
+</body>
+</html>
