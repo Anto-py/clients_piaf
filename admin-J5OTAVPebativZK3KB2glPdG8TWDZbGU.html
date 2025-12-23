@@ -72,6 +72,11 @@
         }
 
         .refresh-btn:hover { background: #b8954d; }
+        
+        .refresh-btn.loading {
+            opacity: 0.7;
+            cursor: wait;
+        }
 
         .container {
             display: grid;
@@ -468,6 +473,82 @@
         .toast.success { background: var(--vert); }
         .toast.error { background: var(--bordeaux); }
 
+        /* Debug panel */
+        .debug-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #1a1a1a;
+            color: #00ff00;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .debug-panel.visible {
+            display: block;
+        }
+        
+        .debug-toggle {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: var(--bordeaux);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            z-index: 10000;
+            font-size: 12px;
+        }
+        
+        .debug-line {
+            margin: 2px 0;
+            border-bottom: 1px solid #333;
+            padding: 2px 0;
+        }
+        
+        .debug-line.error { color: #ff6b6b; }
+        .debug-line.success { color: #69db7c; }
+        .debug-line.info { color: #74c0fc; }
+
+        /* Status indicator */
+        .api-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            background: rgba(255,255,255,0.1);
+            color: var(--gris-clair);
+        }
+        
+        .api-status .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gris);
+        }
+        
+        .api-status.connected .dot { background: var(--vert); }
+        .api-status.error .dot { background: var(--bordeaux); }
+        .api-status.loading .dot { 
+            background: var(--or);
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
         @media (max-width: 1200px) {
             .container { grid-template-columns: 1fr; }
             .sidebar-left, .sidebar-right { display: none; }
@@ -478,8 +559,12 @@
     <header>
         <div class="logo">PIAF<span>.</span> <small style="font-size: 0.6em; color: var(--gris-clair);">Admin</small></div>
         <div class="header-info">
+            <div class="api-status" id="apiStatus">
+                <span class="dot"></span>
+                <span id="apiStatusText">Connexion...</span>
+            </div>
             <div class="header-date" id="headerDate"></div>
-            <button class="refresh-btn" onclick="loadDashboard()">↻ Actualiser</button>
+            <button class="refresh-btn" id="refreshBtn" onclick="loadDashboard()">↻ Actualiser</button>
         </div>
     </header>
 
@@ -523,6 +608,9 @@
         <main class="main-content">
             <div class="date-header">
                 <h1 class="current-date" id="currentDateTitle"></h1>
+                <button class="refresh-btn" onclick="loadAllReservations()" style="background: var(--bordeaux);">
+                    📋 Voir TOUTES les réservations
+                </button>
             </div>
 
             <div class="tables-overview">
@@ -591,6 +679,10 @@
         </div>
     </div>
 
+    <!-- Debug Panel -->
+    <button class="debug-toggle" onclick="toggleDebug()">🔧 Debug</button>
+    <div class="debug-panel" id="debugPanel"></div>
+
     <script>
         // ============================================
         // CONFIGURATION - À MODIFIER
@@ -603,8 +695,42 @@
         // Mode test activé si l'URL n'est pas configurée
         const TEST_MODE = API_URL.includes('VOTRE_ID');
         
-        if (TEST_MODE) {
-            console.warn('⚠️ MODE TEST ACTIF - Données de démonstration affichées');
+        // ============================================
+        // DEBUG
+        // ============================================
+        
+        const debugLogs = [];
+        
+        function debugLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = { timestamp, message, type };
+            debugLogs.push(logEntry);
+            
+            // Console
+            const consoleMethod = type === 'error' ? console.error : (type === 'success' ? console.log : console.info);
+            consoleMethod(`[${timestamp}] ${message}`);
+            
+            // Panel
+            updateDebugPanel();
+        }
+        
+        function updateDebugPanel() {
+            const panel = document.getElementById('debugPanel');
+            panel.innerHTML = debugLogs.slice(-50).map(log => 
+                `<div class="debug-line ${log.type}">[${log.timestamp}] ${log.message}</div>`
+            ).join('');
+            panel.scrollTop = panel.scrollHeight;
+        }
+        
+        function toggleDebug() {
+            document.getElementById('debugPanel').classList.toggle('visible');
+        }
+        
+        function setApiStatus(status, text) {
+            const el = document.getElementById('apiStatus');
+            const textEl = document.getElementById('apiStatusText');
+            el.className = 'api-status ' + status;
+            textEl.textContent = text;
         }
         
         // ============================================
@@ -628,13 +754,21 @@
         // ============================================
         
         document.addEventListener('DOMContentLoaded', () => {
+            debugLog('Dashboard initialisé', 'info');
+            debugLog(`API URL: ${API_URL.substring(0, 50)}...`, 'info');
+            debugLog(`Date sélectionnée: ${state.selectedDate}`, 'info');
+            debugLog(`Mode test: ${TEST_MODE}`, TEST_MODE ? 'error' : 'success');
+            
             updateHeaderDate();
             renderCalendar();
             loadDashboard();
             loadClosures();
             
             // Auto-refresh toutes les 30 secondes
-            setInterval(loadDashboard, 30000);
+            setInterval(() => {
+                debugLog('Auto-refresh...', 'info');
+                loadDashboard();
+            }, 30000);
         });
 
         // ============================================
@@ -653,9 +787,16 @@
         };
         
         async function apiCall(action, params = {}, postData = null) {
+            const refreshBtn = document.getElementById('refreshBtn');
+            refreshBtn.classList.add('loading');
+            setApiStatus('loading', 'Requête...');
+            
+            debugLog(`API Call: ${action} | Params: ${JSON.stringify(params)}`, 'info');
+            
             // Mode test : retourne des données de démonstration
             if (TEST_MODE) {
-                await new Promise(r => setTimeout(r, 500)); // Simule latence
+                debugLog('MODE TEST - Utilisation de données de démonstration', 'error');
+                await new Promise(r => setTimeout(r, 500));
                 
                 if (action === 'getDashboardData') {
                     const pending = DEMO_DATA.reservations.filter(r => r.statut === 'en attente').length;
@@ -696,6 +837,8 @@
                 url += `&${key}=${encodeURIComponent(params[key])}`;
             });
             
+            debugLog(`URL complète: ${url}`, 'info');
+            
             const options = { 
                 method: postData ? 'POST' : 'GET',
                 redirect: 'follow'
@@ -704,19 +847,55 @@
             if (postData) {
                 options.headers = { 'Content-Type': 'text/plain' };
                 options.body = JSON.stringify(postData);
+                debugLog(`POST data: ${JSON.stringify(postData)}`, 'info');
             }
             
             try {
+                debugLog('Envoi de la requête...', 'info');
+                const startTime = Date.now();
+                
                 const response = await fetch(url, options);
                 
+                const duration = Date.now() - startTime;
+                debugLog(`Réponse reçue en ${duration}ms | Status: ${response.status}`, 
+                    response.ok ? 'success' : 'error');
+                
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
                 
-                return await response.json();
+                const text = await response.text();
+                debugLog(`Réponse brute (${text.length} chars): ${text.substring(0, 200)}...`, 'info');
+                
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (parseError) {
+                    debugLog(`Erreur parsing JSON: ${parseError.message}`, 'error');
+                    throw new Error('Réponse invalide du serveur');
+                }
+                
+                debugLog(`Données parsées: success=${data.success}`, data.success ? 'success' : 'error');
+                
+                if (data.reservations) {
+                    debugLog(`Réservations reçues: ${data.reservations.length}`, 'info');
+                    data.reservations.forEach((r, i) => {
+                        debugLog(`  [${i}] ${r.id} | ${r.date} ${r.heure} | ${r.nom} | ${r.statut}`, 'info');
+                    });
+                }
+                
+                setApiStatus('connected', 'Connecté');
+                refreshBtn.classList.remove('loading');
+                
+                return data;
+                
             } catch (error) {
-                console.error('Erreur API:', error);
-                return { success: false, error: 'Connexion impossible: ' + error.message };
+                debugLog(`ERREUR: ${error.message}`, 'error');
+                setApiStatus('error', 'Erreur');
+                refreshBtn.classList.remove('loading');
+                
+                showToast('Erreur de connexion: ' + error.message, 'error');
+                return { success: false, error: error.message };
             }
         }
 
@@ -725,14 +904,23 @@
         // ============================================
         
         async function loadDashboard() {
+            debugLog(`=== loadDashboard() | Date: ${state.selectedDate} ===`, 'info');
+            
             const data = await apiCall('getDashboardData', { date: state.selectedDate });
             
             if (data.success) {
                 state.reservations = data.reservations || [];
                 
+                debugLog(`Réservations chargées: ${state.reservations.length}`, 'success');
+                
                 // Stats
-                document.getElementById('statPending').textContent = data.stats?.pending || 0;
-                document.getElementById('statConfirmed').textContent = data.stats?.confirmed || 0;
+                const pending = state.reservations.filter(r => r.statut === 'en attente').length;
+                const confirmed = state.reservations.filter(r => r.statut === 'confirmée').length;
+                
+                debugLog(`Stats calculées: pending=${pending}, confirmed=${confirmed}`, 'info');
+                
+                document.getElementById('statPending').textContent = data.stats?.pending || pending;
+                document.getElementById('statConfirmed').textContent = data.stats?.confirmed || confirmed;
                 document.getElementById('statGuests').textContent = data.stats?.totalGuests || 0;
                 
                 renderPendingList();
@@ -740,6 +928,47 @@
                 renderAllReservations();
                 renderTables();
                 updateDateTitle();
+            } else {
+                debugLog(`Échec loadDashboard: ${data.error}`, 'error');
+            }
+        }
+        
+        async function loadAllReservations() {
+            debugLog('=== loadAllReservations() ===', 'info');
+            
+            const data = await apiCall('getAllReservations', {});
+            
+            if (data.success && data.reservations) {
+                debugLog(`Toutes les réservations: ${data.reservations.length}`, 'success');
+                
+                const container = document.getElementById('allReservations');
+                
+                if (data.reservations.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <p>Aucune réservation dans la base de données</p>
+                        </div>
+                    `;
+                } else {
+                    // Grouper par date
+                    const byDate = {};
+                    data.reservations.forEach(r => {
+                        if (!byDate[r.date]) byDate[r.date] = [];
+                        byDate[r.date].push(r);
+                    });
+                    
+                    let html = '<div style="background: var(--or-clair); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">📋 Affichage de TOUTES les réservations (toutes dates)</div>';
+                    
+                    Object.keys(byDate).sort().reverse().forEach(date => {
+                        html += `<h3 style="margin: 1rem 0 0.5rem; color: var(--bordeaux);">📅 ${date}</h3>`;
+                        byDate[date].forEach(r => {
+                            html += renderReservationCard(r, r.statut === 'en attente');
+                        });
+                    });
+                    
+                    container.innerHTML = html;
+                }
             }
         }
 
@@ -751,11 +980,14 @@
             const container = document.getElementById('pendingList');
             const pending = state.reservations.filter(r => r.statut === 'en attente');
             
+            debugLog(`renderPendingList: ${pending.length} en attente`, 'info');
+            
             if (pending.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">✓</div>
                         <p>Aucune demande en attente</p>
+                        <p style="font-size: 0.8rem; margin-top: 0.5rem;">pour le ${state.selectedDate}</p>
                     </div>
                 `;
                 return;
@@ -767,6 +999,8 @@
         function renderConfirmedList() {
             const container = document.getElementById('confirmedList');
             const confirmed = state.reservations.filter(r => r.statut === 'confirmée');
+            
+            debugLog(`renderConfirmedList: ${confirmed.length} confirmées`, 'info');
             
             if (confirmed.length === 0) {
                 container.innerHTML = `<p style="color: var(--gris); text-align: center;">Aucune réservation confirmée</p>`;
@@ -780,8 +1014,10 @@
             const container = document.getElementById('allReservations');
             const sorted = [...state.reservations].sort((a, b) => a.heure.localeCompare(b.heure));
             
+            debugLog(`renderAllReservations: ${sorted.length} total`, 'info');
+            
             if (sorted.length === 0) {
-                container.innerHTML = `<p style="color: var(--gris);">Aucune réservation pour cette date</p>`;
+                container.innerHTML = `<p style="color: var(--gris);">Aucune réservation pour le ${state.selectedDate}</p>`;
                 return;
             }
             
@@ -798,9 +1034,10 @@
                         <span class="reservation-guests">${r.personnes} pers.</span>
                     </div>
                     <div class="reservation-details">
-                        <span class="reservation-time">📅 ${formatDate(r.date)} à ${r.heure}</span>
+                        <span class="reservation-time">📅 ${r.date} à ${r.heure}</span>
                         <span>📞 ${escapeHtml(r.telephone)}</span>
                         <span>✉️ ${escapeHtml(r.email)}</span>
+                        <span style="font-size: 0.75rem; color: var(--or);">🔖 ${r.statut} | ID: ${r.id}</span>
                     </div>
                     ${r.tables ? `<div class="reservation-tables">Tables : ${r.tables}</div>` : ''}
                     ${showActions ? `
@@ -814,6 +1051,7 @@
         }
 
         async function confirmReservation(id) {
+            debugLog(`confirmReservation: ${id}`, 'info');
             const result = await apiCall('confirmReservation', { id });
             
             if (result.success) {
@@ -834,6 +1072,7 @@
 
         async function confirmRefuse() {
             const message = document.getElementById('refuseMessage').value;
+            debugLog(`confirmRefuse: ${state.pendingRefuseId}`, 'info');
             
             const result = await apiCall('refuseReservation', 
                 { id: state.pendingRefuseId }, 
@@ -862,7 +1101,7 @@
             state.reservations
                 .filter(r => r.statut === 'confirmée' && r.tables)
                 .forEach(r => {
-                    r.tables.split(',').forEach(t => occupiedTables.add(parseInt(t.trim())));
+                    String(r.tables).split(',').forEach(t => occupiedTables.add(parseInt(t.trim())));
                 });
             
             let html = '';
@@ -888,9 +1127,11 @@
         // ============================================
         
         async function loadClosures() {
+            debugLog('loadClosures()', 'info');
             const result = await apiCall('getClosures');
             if (result.success) {
                 state.closures = result.closures || [];
+                debugLog(`Fermetures: ${state.closures.length}`, 'info');
                 renderClosures();
             }
         }
@@ -909,7 +1150,7 @@
             
             container.innerHTML = futurClosures.map(c => `
                 <div class="closure-item">
-                    <span>${formatDate(c.date)} ${c.start}-${c.end}</span>
+                    <span>${c.date} ${c.start}-${c.end}</span>
                     <button class="closure-delete" onclick="deleteClosure('${c.id}')">×</button>
                 </div>
             `).join('');
@@ -925,6 +1166,8 @@
             const start = document.getElementById('closureStart').value;
             const end = document.getElementById('closureEnd').value;
             
+            debugLog(`addClosure: ${date} ${start}-${end}`, 'info');
+            
             const result = await apiCall('addClosure', {}, { date, startTime: start, endTime: end });
             
             closeModal('closureModal');
@@ -938,6 +1181,7 @@
         }
 
         async function deleteClosure(id) {
+            debugLog(`deleteClosure: ${id}`, 'info');
             const result = await apiCall('removeClosure', { id });
             
             if (result.success) {
@@ -994,6 +1238,7 @@
         }
 
         function selectDate(dateStr) {
+            debugLog(`selectDate: ${dateStr}`, 'info');
             state.selectedDate = dateStr;
             renderCalendar();
             loadDashboard();
@@ -1015,14 +1260,9 @@
                 `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()]}`;
         }
 
-        function formatDate(dateStr) {
-            const date = new Date(dateStr);
-            return `${date.getDate()}/${date.getMonth() + 1}`;
-        }
-
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/[&<>"']/g, m => ({
+            return String(str).replace(/[&<>"']/g, m => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[m]));
         }
@@ -1032,6 +1272,7 @@
         }
 
         function showToast(message, type = 'info') {
+            debugLog(`Toast: ${message}`, type);
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
