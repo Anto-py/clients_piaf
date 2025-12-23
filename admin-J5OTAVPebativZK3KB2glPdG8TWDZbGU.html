@@ -226,6 +226,27 @@
             font-weight: 600;
         }
 
+        /* Bouton d'ajout manuel */
+        .add-reservation-btn {
+            background: var(--vert);
+            color: var(--blanc);
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .add-reservation-btn:hover {
+            background: #234a31;
+            transform: translateY(-2px);
+        }
+
         .tables-overview { margin-top: 2rem; }
 
         .tables-grid {
@@ -292,6 +313,7 @@
             border-left: 4px solid var(--orange);
             transition: all 0.2s;
             animation: fadeIn 0.3s ease-out;
+            position: relative;
         }
 
         .reservation-card:hover { transform: translateX(4px); }
@@ -348,6 +370,20 @@
         .btn-confirm:hover { background: #234a31; }
         .btn-refuse { background: var(--blanc); color: var(--bordeaux); border: 1px solid var(--bordeaux); }
         .btn-refuse:hover { background: var(--bordeaux); color: var(--blanc); }
+        
+        /* Bouton de suppression */
+        .btn-delete {
+            background: transparent;
+            color: var(--gris);
+            border: 1px solid var(--gris-clair);
+            padding: 0.4rem 0.6rem;
+            font-size: 0.75rem;
+        }
+        .btn-delete:hover {
+            background: var(--bordeaux);
+            color: var(--blanc);
+            border-color: var(--bordeaux);
+        }
 
         .modal-overlay {
             position: fixed;
@@ -370,6 +406,8 @@
             padding: 2rem;
             max-width: 500px;
             width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
             transform: translateY(20px);
             transition: transform 0.3s;
         }
@@ -397,12 +435,22 @@
         }
 
         .form-group textarea { resize: vertical; min-height: 100px; }
-        .form-group textarea:focus, .form-group input:focus { outline: none; border-color: var(--or); }
+        .form-group textarea:focus, .form-group input:focus, .form-group select:focus { 
+            outline: none; 
+            border-color: var(--or); 
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
 
         .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
         .btn-cancel { background: var(--creme); color: var(--noir); }
         .btn-send { background: var(--bordeaux); color: var(--blanc); }
         .btn-add { background: var(--or); color: var(--noir); }
+        .btn-add-green { background: var(--vert); color: var(--blanc); }
 
         /* Sélecteur de tables dans le modal */
         .table-selector {
@@ -612,6 +660,17 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.3; }
         }
+        
+        /* Warning pour suppression */
+        .warning-text {
+            background: rgba(114, 47, 55, 0.1);
+            border: 1px solid var(--bordeaux);
+            color: var(--bordeaux);
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
 
         @media (max-width: 1200px) {
             .container { grid-template-columns: 1fr; }
@@ -672,6 +731,9 @@
         <main class="main-content">
             <div class="date-header">
                 <h1 class="current-date" id="currentDateTitle"></h1>
+                <button class="add-reservation-btn" onclick="openManualReservationModal()">
+                    + Ajouter une réservation
+                </button>
             </div>
 
             <div class="tables-overview">
@@ -767,6 +829,85 @@
         </div>
     </div>
 
+    <!-- NOUVEAU: Modal Ajout manuel de réservation -->
+    <div class="modal-overlay" id="manualReservationModal">
+        <div class="modal">
+            <h2 class="modal-title">Ajouter une réservation</h2>
+            <p class="modal-subtitle">Pour les réservations par téléphone</p>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date *</label>
+                    <input type="date" id="manualDate">
+                </div>
+                <div class="form-group">
+                    <label>Heure *</label>
+                    <input type="time" id="manualTime" value="12:00">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Nombre de personnes *</label>
+                <input type="number" id="manualGuests" min="1" max="32" value="2">
+            </div>
+            
+            <div class="form-group">
+                <label>Nom du client *</label>
+                <input type="text" id="manualName" placeholder="Ex: Dupont">
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Téléphone</label>
+                    <input type="tel" id="manualPhone" placeholder="+32 4XX XX XX XX">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="manualEmail" placeholder="client@exemple.be">
+                </div>
+            </div>
+            
+            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+                Attribution des tables :
+            </label>
+            <div class="table-selector" id="manualTableSelector"></div>
+            
+            <div class="selected-tables-summary">
+                <span>Tables sélectionnées :</span>
+                <span class="tables-list" id="manualSelectedTablesList">Aucune</span>
+            </div>
+            
+            <div class="form-group" style="margin-top: 1rem;">
+                <label>Commentaire (optionnel)</label>
+                <input type="text" id="manualComment" placeholder="Ex: Anniversaire, chaise bébé...">
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('manualReservationModal')">Annuler</button>
+                <button class="btn btn-add-green" id="manualReservationBtn" onclick="createManualReservation()">
+                    ✓ Créer la réservation
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOUVEAU: Modal Suppression -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h2 class="modal-title">Supprimer la réservation</h2>
+            <p class="modal-subtitle" id="deleteModalSubtitle"></p>
+            
+            <div class="warning-text">
+                ⚠️ Cette action est irréversible. La réservation sera définitivement supprimée et aucun email ne sera envoyé au client.
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('deleteModal')">Annuler</button>
+                <button class="btn btn-send" onclick="confirmDelete()">🗑️ Supprimer</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // CONFIGURATION
@@ -788,7 +929,9 @@
             pendingConfirmId: null,
             pendingConfirmReservation: null,
             selectedTables: new Set(),
-            pendingRefuseId: null
+            pendingRefuseId: null,
+            pendingDeleteId: null,
+            manualSelectedTables: new Set()
         };
 
         const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -899,8 +1042,13 @@
                     const resStart = timeToMinutes(r.heure);
                     const resEnd = resStart + OCCUPATION_DURATION;
                     
-                    // Vérifier le chevauchement
-                    if (slotMinutes < resEnd && slotEnd > resStart) {
+                    // Zone protégée: de (resStart - OCCUPATION_DURATION) à resEnd
+                    // Pour respecter la contrainte "1h30 avant"
+                    const protectedZoneStart = resStart - OCCUPATION_DURATION;
+                    const protectedZoneEnd = resEnd;
+                    
+                    // Vérifier le chevauchement avec la zone protégée
+                    if (slotMinutes < protectedZoneEnd && slotEnd > protectedZoneStart) {
                         String(r.tables).split(',').forEach(t => {
                             const tableNum = parseInt(t.trim());
                             occupiedTables.set(tableNum, {
@@ -978,7 +1126,7 @@
         }
         
         function toggleTable(tableNum) {
-            const el = document.querySelector(`.table-select-item[data-table="${tableNum}"]`);
+            const el = document.querySelector(`#tableSelector .table-select-item[data-table="${tableNum}"]`);
             
             if (state.selectedTables.has(tableNum)) {
                 state.selectedTables.delete(tableNum);
@@ -1025,6 +1173,165 @@
             
             if (result.success) {
                 showToast(`Réservation confirmée - Tables ${tables}`, 'success');
+                loadDashboard();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
+        // NOUVEAU: AJOUT MANUEL DE RÉSERVATION
+        // ============================================
+        
+        function openManualReservationModal() {
+            state.manualSelectedTables = new Set();
+            
+            // Pré-remplir avec la date sélectionnée
+            document.getElementById('manualDate').value = state.selectedDate;
+            document.getElementById('manualTime').value = '12:00';
+            document.getElementById('manualGuests').value = '2';
+            document.getElementById('manualName').value = '';
+            document.getElementById('manualPhone').value = '';
+            document.getElementById('manualEmail').value = '';
+            document.getElementById('manualComment').value = '';
+            
+            // Initialiser le sélecteur de tables
+            updateManualTableSelector();
+            
+            document.getElementById('manualReservationModal').classList.add('active');
+            
+            // Ajouter des écouteurs pour mettre à jour les tables disponibles
+            document.getElementById('manualDate').addEventListener('change', updateManualTableSelector);
+            document.getElementById('manualTime').addEventListener('change', updateManualTableSelector);
+        }
+        
+        function updateManualTableSelector() {
+            const date = document.getElementById('manualDate').value;
+            const time = document.getElementById('manualTime').value;
+            
+            if (!date || !time) {
+                document.getElementById('manualTableSelector').innerHTML = 
+                    '<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Sélectionnez une date et une heure</p>';
+                return;
+            }
+            
+            // On utilise les réservations actuelles si c'est le même jour
+            let occupiedTables = new Map();
+            if (date === state.selectedDate) {
+                occupiedTables = getOccupiedTablesAtTime(time);
+            }
+            
+            const selector = document.getElementById('manualTableSelector');
+            let html = '';
+            
+            for (let i = 1; i <= 8; i++) {
+                const occupied = occupiedTables.get(i);
+                const isUnavailable = !!occupied;
+                const isSelected = state.manualSelectedTables.has(i);
+                
+                html += `
+                    <div class="table-select-item ${isUnavailable ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}" 
+                         data-table="${i}"
+                         onclick="${isUnavailable ? '' : `toggleManualTable(${i})`}">
+                        <span class="table-number">${i}</span>
+                        <span class="table-info">
+                            ${isUnavailable 
+                                ? `${occupied.reservation.nom}<br>${occupied.start}` 
+                                : '4 places'}
+                        </span>
+                    </div>
+                `;
+            }
+            
+            selector.innerHTML = html;
+            updateManualSelectedTablesSummary();
+        }
+        
+        function toggleManualTable(tableNum) {
+            const el = document.querySelector(`#manualTableSelector .table-select-item[data-table="${tableNum}"]`);
+            
+            if (state.manualSelectedTables.has(tableNum)) {
+                state.manualSelectedTables.delete(tableNum);
+                el.classList.remove('selected');
+            } else {
+                state.manualSelectedTables.add(tableNum);
+                el.classList.add('selected');
+            }
+            
+            updateManualSelectedTablesSummary();
+        }
+        
+        function updateManualSelectedTablesSummary() {
+            const list = document.getElementById('manualSelectedTablesList');
+            
+            if (state.manualSelectedTables.size === 0) {
+                list.textContent = 'Aucune';
+            } else {
+                const tables = Array.from(state.manualSelectedTables).sort((a, b) => a - b);
+                list.textContent = tables.map(t => `Table ${t}`).join(', ');
+            }
+        }
+        
+        async function createManualReservation() {
+            const date = document.getElementById('manualDate').value;
+            const time = document.getElementById('manualTime').value;
+            const guests = document.getElementById('manualGuests').value;
+            const name = document.getElementById('manualName').value.trim();
+            const phone = document.getElementById('manualPhone').value.trim();
+            const email = document.getElementById('manualEmail').value.trim();
+            const comment = document.getElementById('manualComment').value.trim();
+            const tables = Array.from(state.manualSelectedTables).sort((a, b) => a - b).join(', ');
+            
+            // Validation
+            if (!date || !time || !guests || !name) {
+                showToast('Veuillez remplir les champs obligatoires', 'error');
+                return;
+            }
+            
+            const result = await apiCall('createManualReservation', {}, {
+                date,
+                time,
+                guests: parseInt(guests),
+                name,
+                phone,
+                email,
+                tables,
+                comment,
+                status: 'confirmée'
+            });
+            
+            closeModal('manualReservationModal');
+            
+            if (result.success) {
+                showToast(`Réservation créée pour ${name}`, 'success');
+                
+                // Recharger si c'est le jour affiché
+                if (date === state.selectedDate) {
+                    loadDashboard();
+                }
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
+        // NOUVEAU: SUPPRESSION DE RÉSERVATION
+        // ============================================
+        
+        function openDeleteModal(id, name, date, time) {
+            state.pendingDeleteId = id;
+            document.getElementById('deleteModalSubtitle').textContent = 
+                `Réservation de ${name} le ${date} à ${time}`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        
+        async function confirmDelete() {
+            const result = await apiCall('deleteReservation', { id: state.pendingDeleteId });
+            
+            closeModal('deleteModal');
+            
+            if (result.success) {
+                showToast('Réservation supprimée', 'success');
                 loadDashboard();
             } else {
                 showToast('Erreur: ' + result.error, 'error');
@@ -1079,29 +1386,35 @@
         function renderReservationCard(r, showActions) {
             const statusClass = r.statut === 'confirmée' ? 'confirmed' : (r.statut === 'refusée' ? 'refused' : '');
             const reservationData = JSON.stringify(r).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const escapedName = escapeHtml(r.nom);
+            const escapedDate = escapeHtml(r.date);
             
             return `
                 <div class="reservation-card ${statusClass}">
                     <div class="reservation-header">
-                        <span class="reservation-name">${escapeHtml(r.nom)}</span>
+                        <span class="reservation-name">${escapedName}</span>
                         <span class="reservation-guests">${r.personnes} pers.</span>
                     </div>
                     <div class="reservation-details">
                         <span class="reservation-time">🕐 ${r.heure}</span>
-                        <span>📞 ${escapeHtml(r.telephone)}</span>
-                        <span>✉️ ${escapeHtml(r.email)}</span>
+                        ${r.telephone ? `<span>📞 ${escapeHtml(r.telephone)}</span>` : ''}
+                        ${r.email ? `<span>✉️ ${escapeHtml(r.email)}</span>` : ''}
                     </div>
                     ${r.tables ? `<div class="reservation-tables">🪑 Tables : ${r.tables}</div>` : ''}
-                    ${showActions ? `
-                        <div class="reservation-actions">
+                    ${r.commentaire ? `<div style="font-size: 0.8rem; color: var(--gris); font-style: italic; margin-bottom: 0.5rem;">💬 ${escapeHtml(r.commentaire)}</div>` : ''}
+                    <div class="reservation-actions">
+                        ${showActions ? `
                             <button class="btn btn-confirm" onclick='openConfirmModal(${reservationData})'>
                                 ✓ Placer
                             </button>
-                            <button class="btn btn-refuse" onclick="openRefuseModal('${r.id}', '${escapeHtml(r.nom)}')">
+                            <button class="btn btn-refuse" onclick="openRefuseModal('${r.id}', '${escapedName}')">
                                 ✗ Refuser
                             </button>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                        <button class="btn btn-delete" onclick="openDeleteModal('${r.id}', '${escapedName}', '${escapedDate}', '${r.heure}')">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             `;
         }
