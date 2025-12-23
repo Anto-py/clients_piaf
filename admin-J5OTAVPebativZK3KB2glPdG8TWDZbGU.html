@@ -521,6 +521,66 @@
             color: var(--bordeaux);
         }
         
+        /* Alerte de conflit */
+        .conflict-alert {
+            background: rgba(114, 47, 55, 0.15);
+            border: 2px solid var(--bordeaux);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .conflict-alert.visible {
+            display: block;
+            animation: shake 0.4s ease-in-out;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+        
+        .conflict-alert-title {
+            color: var(--bordeaux);
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .conflict-alert-text {
+            color: var(--noir);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        .conflict-list {
+            margin-top: 0.5rem;
+            padding-left: 1rem;
+            font-size: 0.8rem;
+            color: var(--gris);
+        }
+        
+        .conflict-list li {
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Loading dans le sélecteur de tables */
+        .table-selector-loading {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 2rem;
+            color: var(--gris);
+        }
+        
+        .table-selector-loading .spinner {
+            margin: 0 auto 0.5rem;
+        }
+        
         .tables-hint {
             background: var(--or-clair);
             padding: 0.75rem;
@@ -870,6 +930,13 @@
             <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
                 Attribution des tables :
             </label>
+            
+            <!-- Alerte de conflit -->
+            <div class="conflict-alert" id="manualConflictAlert">
+                <div class="conflict-alert-title">⚠️ Conflit détecté</div>
+                <div class="conflict-alert-text" id="manualConflictText"></div>
+            </div>
+            
             <div class="table-selector" id="manualTableSelector"></div>
             
             <div class="selected-tables-summary">
@@ -931,7 +998,9 @@
             selectedTables: new Set(),
             pendingRefuseId: null,
             pendingDeleteId: null,
-            manualSelectedTables: new Set()
+            manualSelectedTables: new Set(),
+            // Cache des réservations par date pour éviter les appels API répétitifs
+            reservationsCache: {}
         };
 
         const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -1014,6 +1083,12 @@
             if (data.success) {
                 state.reservations = data.reservations || [];
                 
+                // Mettre à jour le cache pour cette date
+                state.reservationsCache[state.selectedDate] = {
+                    data: state.reservations,
+                    timestamp: Date.now()
+                };
+                
                 document.getElementById('statPending').textContent = data.stats?.pending || 0;
                 document.getElementById('statConfirmed').textContent = data.stats?.confirmed || 0;
                 document.getElementById('statGuests').textContent = data.stats?.totalGuests || 0;
@@ -1030,13 +1105,46 @@
         // GESTION DES TABLES
         // ============================================
         
-        function getOccupiedTablesAtTime(timeStr, excludeReservationId = null) {
+        /**
+         * Récupère les réservations d'une date avec mise en cache
+         */
+        async function getReservationsForDate(dateStr) {
+            // Si c'est la date actuellement affichée, utiliser les données en mémoire
+            if (dateStr === state.selectedDate) {
+                return state.reservations;
+            }
+            
+            // Vérifier le cache (expire après 60 secondes)
+            const cached = state.reservationsCache[dateStr];
+            if (cached && (Date.now() - cached.timestamp) < 60000) {
+                return cached.data;
+            }
+            
+            // Appeler l'API pour récupérer les réservations de cette date
+            const result = await apiCall('getDashboardData', { date: dateStr });
+            
+            if (result.success && result.reservations) {
+                // Mettre en cache
+                state.reservationsCache[dateStr] = {
+                    data: result.reservations,
+                    timestamp: Date.now()
+                };
+                return result.reservations;
+            }
+            
+            return [];
+        }
+        
+        /**
+         * Calcule les tables occupées à un créneau donné
+         */
+        function getOccupiedTablesAtTime(timeStr, reservations, excludeReservationId = null) {
             const occupiedTables = new Map(); // table -> { reservation, start, end }
             
             const slotMinutes = timeToMinutes(timeStr);
             const slotEnd = slotMinutes + OCCUPATION_DURATION;
             
-            state.reservations
+            reservations
                 .filter(r => r.statut === 'confirmée' && r.tables && r.id !== excludeReservationId)
                 .forEach(r => {
                     const resStart = timeToMinutes(r.heure);
@@ -1061,6 +1169,40 @@
                 });
             
             return occupiedTables;
+        }
+        
+        /**
+         * Détecte les conflits potentiels pour des tables sélectionnées
+         * Retourne un objet avec les détails des conflits
+         */
+        function detectConflicts(timeStr, selectedTables, reservations, excludeReservationId = null) {
+            const conflicts = [];
+            const slotMinutes = timeToMinutes(timeStr);
+            const slotEnd = slotMinutes + OCCUPATION_DURATION;
+            
+            reservations
+                .filter(r => r.statut === 'confirmée' && r.tables && r.id !== excludeReservationId)
+                .forEach(r => {
+                    const resStart = timeToMinutes(r.heure);
+                    const resEnd = resStart + OCCUPATION_DURATION;
+                    const protectedZoneStart = resStart - OCCUPATION_DURATION;
+                    
+                    // Vérifier si le créneau est en conflit
+                    if (slotMinutes < resEnd && slotEnd > protectedZoneStart) {
+                        const resTables = String(r.tables).split(',').map(t => parseInt(t.trim()));
+                        const conflictingTables = Array.from(selectedTables).filter(t => resTables.includes(t));
+                        
+                        if (conflictingTables.length > 0) {
+                            conflicts.push({
+                                reservation: r,
+                                tables: conflictingTables,
+                                type: slotMinutes >= resStart && slotMinutes < resEnd ? 'overlap' : 'buffer'
+                            });
+                        }
+                    }
+                });
+            
+            return conflicts;
         }
         
         function timeToMinutes(time) {
@@ -1094,8 +1236,8 @@
             document.getElementById('tablesNeeded').textContent = 
                 tablesNeeded === 1 ? '1 table requise' : '2 tables requises';
             
-            // Trouver les tables occupées à ce créneau
-            const occupiedTables = getOccupiedTablesAtTime(reservation.heure, reservation.id);
+            // Trouver les tables occupées à ce créneau (utilise les réservations du jour affiché)
+            const occupiedTables = getOccupiedTablesAtTime(reservation.heure, state.reservations, reservation.id);
             
             // Générer le sélecteur de tables
             const selector = document.getElementById('tableSelector');
@@ -1163,6 +1305,29 @@
         
         async function confirmWithTables() {
             const tables = Array.from(state.selectedTables).sort((a, b) => a - b).join(', ');
+            const reservation = state.pendingConfirmReservation;
+            
+            // Double vérification des conflits avant confirmation
+            const conflicts = detectConflicts(
+                reservation.heure, 
+                state.selectedTables, 
+                state.reservations, 
+                reservation.id
+            );
+            
+            if (conflicts.length > 0) {
+                const conflictDetails = conflicts.map(c => 
+                    `Table(s) ${c.tables.join(', ')} : ${c.reservation.nom} à ${c.reservation.heure}`
+                ).join('\n');
+                
+                const confirmed = confirm(
+                    `⚠️ ATTENTION : Conflit détecté !\n\n${conflictDetails}\n\nÊtes-vous sûr de vouloir confirmer malgré le conflit ?`
+                );
+                
+                if (!confirmed) {
+                    return;
+                }
+            }
             
             const result = await apiCall('confirmReservation', { 
                 id: state.pendingConfirmId,
@@ -1183,8 +1348,14 @@
         // NOUVEAU: AJOUT MANUEL DE RÉSERVATION
         // ============================================
         
+        // Stocker les réservations de la date manuelle pour éviter les appels répétés
+        let manualDateReservations = [];
+        let manualCurrentDate = null;
+        
         function openManualReservationModal() {
             state.manualSelectedTables = new Set();
+            manualDateReservations = [];
+            manualCurrentDate = null;
             
             // Pré-remplir avec la date sélectionnée
             document.getElementById('manualDate').value = state.selectedDate;
@@ -1194,6 +1365,9 @@
             document.getElementById('manualPhone').value = '';
             document.getElementById('manualEmail').value = '';
             document.getElementById('manualComment').value = '';
+            
+            // Cacher l'alerte de conflit
+            document.getElementById('manualConflictAlert').classList.remove('visible');
             
             // Initialiser le sélecteur de tables
             updateManualTableSelector();
@@ -1205,23 +1379,38 @@
             document.getElementById('manualTime').addEventListener('change', updateManualTableSelector);
         }
         
-        function updateManualTableSelector() {
+        async function updateManualTableSelector() {
             const date = document.getElementById('manualDate').value;
             const time = document.getElementById('manualTime').value;
+            const selector = document.getElementById('manualTableSelector');
+            
+            // Cacher l'alerte de conflit
+            document.getElementById('manualConflictAlert').classList.remove('visible');
             
             if (!date || !time) {
-                document.getElementById('manualTableSelector').innerHTML = 
+                selector.innerHTML = 
                     '<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Sélectionnez une date et une heure</p>';
                 return;
             }
             
-            // On utilise les réservations actuelles si c'est le même jour
-            let occupiedTables = new Map();
-            if (date === state.selectedDate) {
-                occupiedTables = getOccupiedTablesAtTime(time);
+            // Afficher un loading
+            selector.innerHTML = `
+                <div class="table-selector-loading">
+                    <div class="spinner"></div>
+                    Chargement des disponibilités...
+                </div>
+            `;
+            
+            // Charger les réservations de la date si nécessaire
+            if (date !== manualCurrentDate) {
+                manualCurrentDate = date;
+                state.manualSelectedTables = new Set(); // Reset les tables sélectionnées
+                manualDateReservations = await getReservationsForDate(date);
             }
             
-            const selector = document.getElementById('manualTableSelector');
+            // Calculer les tables occupées
+            const occupiedTables = getOccupiedTablesAtTime(time, manualDateReservations);
+            
             let html = '';
             
             for (let i = 1; i <= 8; i++) {
@@ -1236,7 +1425,7 @@
                         <span class="table-number">${i}</span>
                         <span class="table-info">
                             ${isUnavailable 
-                                ? `${occupied.reservation.nom}<br>${occupied.start}` 
+                                ? `${escapeHtml(occupied.reservation.nom)}<br>${occupied.start}` 
                                 : '4 places'}
                         </span>
                     </div>
@@ -1259,6 +1448,7 @@
             }
             
             updateManualSelectedTablesSummary();
+            checkManualConflicts();
         }
         
         function updateManualSelectedTablesSummary() {
@@ -1272,6 +1462,39 @@
             }
         }
         
+        /**
+         * Vérifie les conflits potentiels lors de la sélection manuelle
+         */
+        function checkManualConflicts() {
+            const time = document.getElementById('manualTime').value;
+            const alertEl = document.getElementById('manualConflictAlert');
+            const alertTextEl = document.getElementById('manualConflictText');
+            
+            if (state.manualSelectedTables.size === 0) {
+                alertEl.classList.remove('visible');
+                return;
+            }
+            
+            const conflicts = detectConflicts(time, state.manualSelectedTables, manualDateReservations);
+            
+            if (conflicts.length > 0) {
+                let conflictHtml = 'Les tables sélectionnées entrent en conflit avec :<ul class="conflict-list">';
+                
+                conflicts.forEach(c => {
+                    const conflictType = c.type === 'overlap' 
+                        ? 'chevauchement direct' 
+                        : 'moins de 1h30 de marge';
+                    conflictHtml += `<li><strong>Table(s) ${c.tables.join(', ')}</strong> : ${escapeHtml(c.reservation.nom)} à ${c.reservation.heure} (${conflictType})</li>`;
+                });
+                
+                conflictHtml += '</ul>';
+                alertTextEl.innerHTML = conflictHtml;
+                alertEl.classList.add('visible');
+            } else {
+                alertEl.classList.remove('visible');
+            }
+        }
+        
         async function createManualReservation() {
             const date = document.getElementById('manualDate').value;
             const time = document.getElementById('manualTime').value;
@@ -1282,10 +1505,30 @@
             const comment = document.getElementById('manualComment').value.trim();
             const tables = Array.from(state.manualSelectedTables).sort((a, b) => a - b).join(', ');
             
-            // Validation
+            // Validation des champs obligatoires
             if (!date || !time || !guests || !name) {
                 showToast('Veuillez remplir les champs obligatoires', 'error');
                 return;
+            }
+            
+            // Vérification des conflits côté client
+            if (state.manualSelectedTables.size > 0) {
+                const conflicts = detectConflicts(time, state.manualSelectedTables, manualDateReservations);
+                
+                if (conflicts.length > 0) {
+                    // Afficher une confirmation si conflit détecté
+                    const conflictDetails = conflicts.map(c => 
+                        `Table(s) ${c.tables.join(', ')} : ${c.reservation.nom} à ${c.reservation.heure}`
+                    ).join('\n');
+                    
+                    const confirmed = confirm(
+                        `⚠️ ATTENTION : Conflit détecté !\n\n${conflictDetails}\n\nÊtes-vous sûr de vouloir créer cette réservation malgré le conflit ?`
+                    );
+                    
+                    if (!confirmed) {
+                        return;
+                    }
+                }
             }
             
             const result = await apiCall('createManualReservation', {}, {
@@ -1304,6 +1547,9 @@
             
             if (result.success) {
                 showToast(`Réservation créée pour ${name}`, 'success');
+                
+                // Invalider le cache pour cette date
+                delete state.reservationsCache[date];
                 
                 // Recharger si c'est le jour affiché
                 if (date === state.selectedDate) {
