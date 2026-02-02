@@ -25,7 +25,7 @@ const CONFIG = {
     6: { open: true, services: [{ start: '11:00', end: '15:00' }] }
   },
   TABLES: { count: 8, seatsPerTable: 4, maxGroupSize: 8, minGuests: 2 },
-  OCCUPATION_DURATION: 90, // durée d'occupation en minutes
+  OCCUPATION_DURATION: 120, // durée d'occupation en minutes (2 heures)
   MIN_ADVANCE_HOURS: 2,
   MAX_ADVANCE_DAYS: 10,
   SLOT_INTERVAL: 15
