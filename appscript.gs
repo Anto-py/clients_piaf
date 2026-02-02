@@ -106,26 +106,41 @@ function getConfig(key) {
 
 function normalizeDate(dateValue) {
   if (!dateValue) return null;
-  
+
+  // Fuseau horaire du restaurant (Bruxelles)
+  const TIMEZONE = 'Europe/Brussels';
+
   if (typeof dateValue === 'string') {
+    // Si c'est déjà au format YYYY-MM-DD, le retourner tel quel
     if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) return dateValue;
+
+    // Essayer de parser et reformater avec le bon fuseau horaire
     const parsed = new Date(dateValue);
-    if (!isNaN(parsed.getTime())) return formatDateToYYYYMMDD(parsed);
+    if (!isNaN(parsed.getTime())) {
+      return Utilities.formatDate(parsed, TIMEZONE, 'yyyy-MM-dd');
+    }
     return dateValue;
   }
-  
-  if (dateValue instanceof Date) return formatDateToYYYYMMDD(dateValue);
-  
+
+  // Si c'est un objet Date, utiliser Utilities.formatDate avec le fuseau horaire du restaurant
+  if (dateValue instanceof Date) {
+    return Utilities.formatDate(dateValue, TIMEZONE, 'yyyy-MM-dd');
+  }
+
+  // Dernière tentative
   try {
     const date = new Date(dateValue);
-    if (!isNaN(date.getTime())) return formatDateToYYYYMMDD(date);
+    if (!isNaN(date.getTime())) {
+      return Utilities.formatDate(date, TIMEZONE, 'yyyy-MM-dd');
+    }
   } catch (e) {}
-  
+
   return String(dateValue);
 }
 
 function formatDateToYYYYMMDD(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  // Utiliser le fuseau horaire du restaurant pour la cohérence
+  return Utilities.formatDate(date, 'Europe/Brussels', 'yyyy-MM-dd');
 }
 
 function timeToMinutes(time) {
