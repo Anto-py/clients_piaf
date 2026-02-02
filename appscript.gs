@@ -1,10 +1,15 @@
 /**
  * ============================================
  * PIAF - Système de réservation
- * Backend Google Apps Script v4
+ * Backend Google Apps Script v5
  * ============================================
- * 
- * NOUVEAUTÉS v4:
+ *
+ * NOUVEAUTÉS v5:
+ * - Suppression automatique des réservations expirées (après 2 heures)
+ * - Trigger automatique pour nettoyage toutes les heures
+ * - API de nettoyage manuel et gestion des triggers
+ *
+ * HISTORIQUE v4:
  * - Contrainte 1h30 AVANT une réservation existante
  * - Ajout manuel de réservation (admin)
  * - Suppression de réservation (admin)
@@ -254,7 +259,34 @@ function handleRequest(e) {
         if (!checkAdminAccess(params.secret)) { result = { success: false, error: 'Accès refusé' }; }
         else { result = getDashboardData(params.date); }
         break;
-        
+
+      // NOUVEAU: Nettoyage manuel des réservations expirées
+      case 'cleanupExpiredReservations':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          result = deleteExpiredReservations();
+        }
+        break;
+
+      // NOUVEAU: Installer le trigger de suppression automatique
+      case 'setupAutoDeletion':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          result = setupAutoDeletionTrigger();
+        }
+        break;
+
+      // NOUVEAU: Désinstaller le trigger de suppression automatique
+      case 'removeAutoDeletion':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          result = removeAutoDeletionTrigger();
+        }
+        break;
+
       default:
         result = { success: false, error: 'Action inconnue: ' + action };
     }
@@ -543,6 +575,113 @@ function deleteReservation(id) {
   }
   
   return { success: false, error: 'Réservation non trouvée' };
+}
+
+/**
+ * NOUVEAU: Suppression automatique des réservations expirées
+ * Supprime toutes les réservations dont la date/heure + 2 heures est passée
+ */
+function deleteExpiredReservations() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Reservations');
+
+  if (!sheet) {
+    Logger.log('Erreur: Feuille Reservations non trouvée');
+    return { success: false, error: 'Feuille Reservations non trouvée' };
+  }
+
+  const data = sheet.getDataRange().getValues();
+  const now = new Date();
+  const deletedReservations = [];
+
+  // Parcourir de la fin vers le début pour éviter les décalages d'index lors de la suppression
+  for (let i = data.length - 1; i >= 1; i--) {
+    const row = data[i];
+
+    // Vérifier que la ligne contient des données
+    if (!row[0]) continue;
+
+    const reservationDate = normalizeDate(row[1]);
+    const reservationTime = row[2];
+
+    if (!reservationDate || !reservationTime) continue;
+
+    // Construire la date/heure de la réservation
+    const [year, month, day] = reservationDate.split('-').map(Number);
+    const [hours, minutes] = String(reservationTime).split(':').map(Number);
+    const reservationDateTime = new Date(year, month - 1, day, hours, minutes);
+
+    // Ajouter la durée d'occupation (2 heures)
+    const expirationDateTime = new Date(reservationDateTime.getTime() + CONFIG.OCCUPATION_DURATION * 60 * 1000);
+
+    // Si la réservation est expirée
+    if (expirationDateTime < now) {
+      const reservationInfo = {
+        id: row[0],
+        date: reservationDate,
+        heure: reservationTime,
+        nom: row[4],
+        statut: row[8]
+      };
+
+      deletedReservations.push(reservationInfo);
+
+      // Supprimer la ligne
+      sheet.deleteRow(i + 1);
+
+      Logger.log(`Réservation expirée supprimée: ${JSON.stringify(reservationInfo)}`);
+    }
+  }
+
+  Logger.log(`Nettoyage terminé: ${deletedReservations.length} réservation(s) supprimée(s)`);
+
+  return {
+    success: true,
+    message: `${deletedReservations.length} réservation(s) expirée(s) supprimée(s)`,
+    deleted: deletedReservations
+  };
+}
+
+/**
+ * NOUVEAU: Configuration du déclencheur automatique pour la suppression des réservations expirées
+ * À exécuter manuellement une fois pour installer le trigger
+ */
+function setupAutoDeletionTrigger() {
+  // Supprimer les anciens triggers du même type pour éviter les doublons
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'deleteExpiredReservations') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  // Créer un nouveau trigger qui s'exécute toutes les heures
+  ScriptApp.newTrigger('deleteExpiredReservations')
+    .timeBased()
+    .everyHours(1)
+    .create();
+
+  Logger.log('Trigger de nettoyage automatique installé (exécution toutes les heures)');
+  return { success: true, message: 'Trigger installé avec succès' };
+}
+
+/**
+ * NOUVEAU: Suppression du déclencheur automatique
+ * Pour désactiver la suppression automatique si nécessaire
+ */
+function removeAutoDeletionTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  let removed = 0;
+
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'deleteExpiredReservations') {
+      ScriptApp.deleteTrigger(trigger);
+      removed++;
+    }
+  });
+
+  Logger.log(`${removed} trigger(s) de nettoyage supprimé(s)`);
+  return { success: true, message: `${removed} trigger(s) supprimé(s)` };
 }
 
 function getReservations(date, status) {
