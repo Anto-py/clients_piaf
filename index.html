@@ -46,16 +46,14 @@
         }
 
         .logo {
-            font-family: 'Montserrat', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            font-size: 2rem;
-            font-weight: 300;
-            color: var(--blanc);
-            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
             text-decoration: none;
         }
 
-        .logo span {
-            color: var(--jaune);
+        .logo-img {
+            height: 48px;
+            width: auto;
         }
 
         .lang-selector {
@@ -607,7 +605,7 @@
 </head>
 <body>
     <header>
-        <a href="#" class="logo">PIAF<span>.</span></a>
+        <a href="#" class="logo"><img src="logo_piaf.png" alt="PIAF - Resto de quartier" class="logo-img"></a>
         <div class="lang-selector">
             <button class="lang-btn active" onclick="setLang('fr')">FR</button>
             <button class="lang-btn" onclick="setLang('en')">EN</button>

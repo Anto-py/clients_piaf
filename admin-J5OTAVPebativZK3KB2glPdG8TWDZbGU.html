@@ -45,14 +45,21 @@
         }
 
         .logo {
-            font-family: 'Montserrat', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            font-size: 1.75rem;
-            font-weight: 300;
-            color: var(--blanc);
-            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
 
-        .logo span { color: var(--jaune); }
+        .logo-img {
+            height: 44px;
+            width: auto;
+        }
+
+        .admin-badge {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.7);
+            letter-spacing: 0.05em;
+        }
 
         .header-info {
             display: flex;
@@ -761,7 +768,7 @@
 </head>
 <body>
     <header>
-        <div class="logo">PIAF<span>.</span> <small style="font-size: 0.6em; color: var(--gris-clair);">Admin</small></div>
+        <div class="logo"><img src="logo_piaf.png" alt="PIAF - Resto de quartier" class="logo-img"><small class="admin-badge">Admin</small></div>
         <div class="header-info">
             <div class="api-status" id="apiStatus">
                 <span class="dot"></span>
