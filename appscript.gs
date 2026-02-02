@@ -6,7 +6,7 @@
  *
  * NOUVEAUTÉS v5:
  * - Suppression automatique des réservations expirées (après 2 heures)
- * - Trigger automatique pour nettoyage toutes les heures
+ * - Trigger automatique pour nettoyage quotidien à minuit
  * - API de nettoyage manuel et gestion des triggers
  *
  * HISTORIQUE v4:
@@ -655,14 +655,15 @@ function setupAutoDeletionTrigger() {
     }
   });
 
-  // Créer un nouveau trigger qui s'exécute toutes les heures
+  // Créer un nouveau trigger qui s'exécute tous les jours à minuit
   ScriptApp.newTrigger('deleteExpiredReservations')
     .timeBased()
-    .everyHours(1)
+    .atHour(0)
+    .everyDays(1)
     .create();
 
-  Logger.log('Trigger de nettoyage automatique installé (exécution toutes les heures)');
-  return { success: true, message: 'Trigger installé avec succès' };
+  Logger.log('Trigger de nettoyage automatique installé (exécution quotidienne à minuit)');
+  return { success: true, message: 'Trigger installé avec succès (exécution quotidienne à minuit)' };
 }
 
 /**

@@ -17,7 +17,7 @@ Les réservations sont automatiquement supprimées du Google Sheet une fois que 
 
 #### Méthode 1 : Trigger automatique (Recommandé)
 
-Le trigger vérifie et supprime les réservations expirées **toutes les heures** automatiquement.
+Le trigger vérifie et supprime les réservations expirées **tous les jours à minuit** automatiquement.
 
 **Installation du trigger :**
 
@@ -27,7 +27,7 @@ Le trigger vérifie et supprime les réservations expirées **toutes les heures*
 4. Cliquez sur "Exécuter" (▶️)
 5. Autorisez les permissions si demandé
 
-Le trigger est maintenant installé et s'exécutera automatiquement toutes les heures.
+Le trigger est maintenant installé et s'exécutera automatiquement tous les jours à minuit.
 
 **Vérification du trigger :**
 - Dans Apps Script, cliquez sur l'icône ⏰ (Déclencheurs) dans le menu de gauche
@@ -103,12 +103,17 @@ Si vous modifiez cette valeur, la suppression automatique s'adaptera automatique
 ## Questions Fréquentes
 
 **Q : Les réservations sont-elles supprimées immédiatement après les 2 heures ?**
-R : Avec le trigger automatique, les réservations sont vérifiées toutes les heures. Une réservation expirée sera donc supprimée dans un délai maximal d'1 heure après son expiration.
+R : Non. Avec le trigger automatique, les réservations sont vérifiées une fois par jour à minuit. Toutes les réservations expirées (terminées depuis plus de 2 heures) seront supprimées lors de ce nettoyage quotidien.
 
 **Q : Puis-je modifier la fréquence de nettoyage ?**
-R : Oui, modifiez la ligne suivante dans `setupAutoDeletionTrigger()` :
+R : Oui, modifiez les lignes suivantes dans `setupAutoDeletionTrigger()` :
 ```javascript
-.everyHours(1)  // Changez 1 par 2, 3, etc. pour une fréquence différente
+// Pour exécuter à une autre heure (ex: 3h du matin) :
+.atHour(3)  // Changez 0 par l'heure souhaitée (0-23)
+.everyDays(1)
+
+// Ou pour exécuter plusieurs fois par jour (ex: toutes les 6 heures) :
+.everyHours(6)  // Au lieu de .atHour(0).everyDays(1)
 ```
 
 **Q : Les réservations refusées sont-elles aussi supprimées ?**
