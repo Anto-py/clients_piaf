@@ -1106,9 +1106,12 @@
         // ============================================
         
         async function loadDashboard() {
+            console.log('📅 Date demandée:', state.selectedDate);
             const data = await apiCall('getDashboardData', { date: state.selectedDate });
-            
+            console.log('📦 Réponse API complète:', JSON.stringify(data, null, 2));
+
             if (data.success) {
+                console.log('✅ Réservations reçues:', data.reservations?.length || 0, data.reservations);
                 state.reservations = data.reservations || [];
                 
                 // Mettre à jour le cache pour cette date
