@@ -1046,6 +1046,29 @@
                 flex: 1 1 45%;
             }
         }
+
+        /* Bouton copie email */
+        .email-container {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .btn-copy-email {
+            background: transparent;
+            border: 1px solid var(--gris-bordure);
+            border-radius: 4px;
+            padding: 0.15rem 0.35rem;
+            cursor: pointer;
+            font-size: 0.7rem;
+            color: var(--gris-texte);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        .btn-copy-email:hover {
+            background: var(--bleu-piaf);
+            color: var(--blanc);
+            border-color: var(--bleu-piaf);
+        }
     </style>
 </head>
 <body>
@@ -2109,7 +2132,7 @@
                         ${showDate ? `<span style="font-weight: 500; color: var(--bleu-piaf);">📅 ${formatDisplayDate(r.date)}</span>` : ''}
                         <span class="reservation-time">🕐 ${r.heure}</span>
                         ${r.telephone ? `<span>📞 ${escapeHtml(r.telephone)}</span>` : ''}
-                        ${r.email ? `<span>✉️ ${escapeHtml(r.email)}</span>` : ''}
+                        ${r.email ? `<span class="email-container">✉️ ${escapeHtml(r.email)} <button class="btn-copy-email" onclick="event.stopPropagation(); copyEmail('${r.email}')" title="Copier l'email">📋</button></span>` : ''}
                     </div>
                     ${r.tables ? `<div class="reservation-tables">🪑 Tables : ${r.tables}</div>` : ''}
                     ${r.commentaire ? `<div style="font-size: 0.8rem; color: var(--gris); font-style: italic; margin-bottom: 0.5rem;">💬 ${escapeHtml(r.commentaire)}</div>` : ''}
@@ -2329,6 +2352,14 @@
             return String(str).replace(/[&<>"']/g, m => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
             }[m]));
+        }
+
+        function copyEmail(email) {
+            navigator.clipboard.writeText(email).then(() => {
+                showToast('Email copié !', 'success');
+            }).catch(() => {
+                showToast('Erreur lors de la copie', 'error');
+            });
         }
 
         function closeModal(id) {
