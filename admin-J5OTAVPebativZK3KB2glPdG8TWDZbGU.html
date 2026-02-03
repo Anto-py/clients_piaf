@@ -1020,6 +1020,7 @@
             selectedDate: new Date().toISOString().split('T')[0],
             currentMonth: new Date(),
             reservations: [],
+            allPendingReservations: [], // Toutes les demandes en attente (toutes dates)
             closures: [],
             pendingConfirmId: null,
             pendingConfirmReservation: null,
@@ -1043,9 +1044,14 @@
             updateHeaderDate();
             renderCalendar();
             loadDashboard();
+            loadAllPendingReservations();
             loadClosures();
-            
-            setInterval(() => loadDashboard(), 30000);
+
+            // Rafraîchir le dashboard et les demandes en attente toutes les 30 secondes
+            setInterval(() => {
+                loadDashboard();
+                loadAllPendingReservations();
+            }, 30000);
         });
 
         // ============================================
@@ -1144,6 +1150,27 @@
                 showToast('Erreur: ' + (data.error || 'Synchronisation échouée'), 'error');
 
                 // Afficher un message d'erreur dans les listes
+                document.getElementById('confirmedList').innerHTML = '';
+                document.getElementById('allReservations').innerHTML = '';
+            }
+        }
+
+        /**
+         * Charge TOUTES les demandes en attente (toutes dates confondues)
+         */
+        async function loadAllPendingReservations() {
+            const data = await apiCall('getReservations', { status: 'en attente' });
+
+            if (data.success) {
+                // Trier par date puis par heure
+                state.allPendingReservations = (data.reservations || []).sort((a, b) => {
+                    const dateCompare = a.date.localeCompare(b.date);
+                    if (dateCompare !== 0) return dateCompare;
+                    return a.heure.localeCompare(b.heure);
+                });
+                renderPendingList();
+            } else {
+                console.error('Erreur chargement demandes en attente:', data.error);
                 document.getElementById('pendingList').innerHTML = `
                     <div class="empty-state" style="color: var(--rouge);">
                         <div class="empty-state-icon">⚠️</div>
@@ -1151,8 +1178,6 @@
                         <p style="font-size: 0.8rem;">${escapeHtml(data.error || 'Connexion échouée')}</p>
                     </div>
                 `;
-                document.getElementById('confirmedList').innerHTML = '';
-                document.getElementById('allReservations').innerHTML = '';
             }
         }
 
@@ -1390,10 +1415,11 @@
             });
             
             closeModal('confirmModal');
-            
+
             if (result.success) {
                 showToast(`Réservation confirmée - Tables ${tables}`, 'success');
                 loadDashboard();
+                loadAllPendingReservations(); // Rafraîchir les demandes en attente
             } else {
                 showToast('Erreur: ' + result.error, 'error');
             }
@@ -1630,10 +1656,11 @@
             const result = await apiCall('deleteReservation', { id: state.pendingDeleteId });
             
             closeModal('deleteModal');
-            
+
             if (result.success) {
                 showToast('Réservation supprimée', 'success');
                 loadDashboard();
+                loadAllPendingReservations(); // Rafraîchir les demandes en attente
             } else {
                 showToast('Erreur: ' + result.error, 'error');
             }
@@ -1645,8 +1672,8 @@
         
         function renderPendingList() {
             const container = document.getElementById('pendingList');
-            const pending = state.reservations.filter(r => r.statut === 'en attente');
-            
+            const pending = state.allPendingReservations;
+
             if (pending.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
@@ -1656,8 +1683,9 @@
                 `;
                 return;
             }
-            
-            container.innerHTML = pending.map(r => renderReservationCard(r, true)).join('');
+
+            // Afficher avec la date car les réservations peuvent être de différentes dates
+            container.innerHTML = pending.map(r => renderReservationCard(r, true, true)).join('');
         }
 
         function renderConfirmedList() {
@@ -1684,12 +1712,18 @@
             container.innerHTML = sorted.map(r => renderReservationCard(r, r.statut === 'en attente')).join('');
         }
 
-        function renderReservationCard(r, showActions) {
+        function renderReservationCard(r, showActions, showDate = false) {
             const statusClass = r.statut === 'confirmée' ? 'confirmed' : (r.statut === 'refusée' ? 'refused' : '');
             const reservationData = JSON.stringify(r).replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const escapedName = escapeHtml(r.nom);
             const escapedDate = escapeHtml(r.date);
-            
+
+            // Formater la date pour l'affichage (ex: "Mar 4 Fév")
+            const formatDisplayDate = (dateStr) => {
+                const date = new Date(dateStr);
+                return `${DAYS[date.getDay()]} ${date.getDate()} ${MONTHS[date.getMonth()].substring(0, 3)}`;
+            };
+
             return `
                 <div class="reservation-card ${statusClass}">
                     <div class="reservation-header">
@@ -1697,6 +1731,7 @@
                         <span class="reservation-guests">${r.personnes} pers.</span>
                     </div>
                     <div class="reservation-details">
+                        ${showDate ? `<span style="font-weight: 500; color: var(--bleu-piaf);">📅 ${formatDisplayDate(r.date)}</span>` : ''}
                         <span class="reservation-time">🕐 ${r.heure}</span>
                         ${r.telephone ? `<span>📞 ${escapeHtml(r.telephone)}</span>` : ''}
                         ${r.email ? `<span>✉️ ${escapeHtml(r.email)}</span>` : ''}
@@ -1737,10 +1772,11 @@
             );
             
             closeModal('refuseModal');
-            
+
             if (result.success) {
                 showToast('Réservation refusée', 'success');
                 loadDashboard();
+                loadAllPendingReservations(); // Rafraîchir les demandes en attente
             } else {
                 showToast('Erreur: ' + result.error, 'error');
             }
