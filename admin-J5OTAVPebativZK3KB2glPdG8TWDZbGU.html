@@ -1063,40 +1063,49 @@
             const refreshBtn = document.getElementById('refreshBtn');
             refreshBtn.classList.add('loading');
             setApiStatus('loading', 'Requête...');
-            
+
             let url = `${API_URL}?action=${action}&secret=${ADMIN_SECRET}`;
             Object.keys(params).forEach(key => {
                 url += `&${key}=${encodeURIComponent(params[key])}`;
             });
-            
-            const options = { 
+
+            console.log('🌐 API Call:', action, params);
+
+            const options = {
                 method: postData ? 'POST' : 'GET',
                 redirect: 'follow'
             };
-            
+
             if (postData) {
                 options.headers = { 'Content-Type': 'text/plain' };
                 options.body = JSON.stringify(postData);
             }
-            
+
             try {
                 const response = await fetch(url, options);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                setApiStatus('connected', 'Connecté');
                 refreshBtn.classList.remove('loading');
-                
+
+                // Vérifier si l'API a retourné une erreur
+                if (data.success === false) {
+                    console.error('🚫 API returned error:', data.error);
+                    setApiStatus('error', data.error || 'Erreur');
+                } else {
+                    setApiStatus('connected', 'Connecté');
+                }
+
                 return data;
-                
+
             } catch (error) {
                 console.error('API Error:', error);
-                setApiStatus('error', 'Erreur');
+                setApiStatus('error', 'Erreur réseau');
                 refreshBtn.classList.remove('loading');
-                showToast('Erreur de connexion', 'error');
+                showToast('Erreur de connexion: ' + error.message, 'error');
                 return { success: false, error: error.message };
             }
         }
@@ -1113,22 +1122,37 @@
             if (data.success) {
                 console.log('✅ Réservations reçues:', data.reservations?.length || 0, data.reservations);
                 state.reservations = data.reservations || [];
-                
+
                 // Mettre à jour le cache pour cette date
                 state.reservationsCache[state.selectedDate] = {
                     data: state.reservations,
                     timestamp: Date.now()
                 };
-                
+
                 document.getElementById('statPending').textContent = data.stats?.pending || 0;
                 document.getElementById('statConfirmed').textContent = data.stats?.confirmed || 0;
                 document.getElementById('statGuests').textContent = data.stats?.totalGuests || 0;
-                
+
                 renderPendingList();
                 renderConfirmedList();
                 renderAllReservations();
                 renderTables();
                 updateDateTitle();
+            } else {
+                // Afficher l'erreur de l'API
+                console.error('❌ Erreur API:', data.error);
+                showToast('Erreur: ' + (data.error || 'Synchronisation échouée'), 'error');
+
+                // Afficher un message d'erreur dans les listes
+                document.getElementById('pendingList').innerHTML = `
+                    <div class="empty-state" style="color: var(--rouge);">
+                        <div class="empty-state-icon">⚠️</div>
+                        <p>Erreur de synchronisation</p>
+                        <p style="font-size: 0.8rem;">${escapeHtml(data.error || 'Connexion échouée')}</p>
+                    </div>
+                `;
+                document.getElementById('confirmedList').innerHTML = '';
+                document.getElementById('allReservations').innerHTML = '';
             }
         }
 
@@ -1912,6 +1936,67 @@
             modal.addEventListener('click', e => {
                 if (e.target === modal) closeModal(modal.id);
             });
+        });
+
+        // ============================================
+        // OUTIL DE DIAGNOSTIC
+        // ============================================
+
+        async function runDiagnostic() {
+            console.log('=== DIAGNOSTIC START ===');
+            console.log('📅 Date sélectionnée:', state.selectedDate);
+            console.log('🔑 Secret utilisé:', ADMIN_SECRET.substring(0, 8) + '...');
+            console.log('🌐 API URL:', API_URL);
+
+            // Test 1: Vérifier la connexion API
+            console.log('\n--- Test 1: Connexion API ---');
+            const testResult = await apiCall('test');
+            console.log('Résultat test:', testResult);
+
+            // Test 2: Récupérer TOUTES les réservations
+            console.log('\n--- Test 2: Toutes les réservations ---');
+            const allResult = await apiCall('getAllReservations');
+            console.log('Résultat getAllReservations:', allResult);
+
+            if (allResult.success && allResult.reservations) {
+                console.log('Nombre total de réservations:', allResult.reservations.length);
+                allResult.reservations.forEach((r, i) => {
+                    console.log(`  [${i}] ID: ${r.id}, Date: ${r.date}, Heure: ${r.heure}, Nom: ${r.nom}, Statut: ${r.statut}`);
+                });
+            }
+
+            // Test 3: Récupérer les réservations pour la date sélectionnée
+            console.log('\n--- Test 3: Réservations pour', state.selectedDate, '---');
+            const dateResult = await apiCall('getDashboardData', { date: state.selectedDate });
+            console.log('Résultat getDashboardData:', dateResult);
+
+            console.log('=== DIAGNOSTIC END ===');
+
+            // Afficher un résumé
+            let summary = '=== DIAGNOSTIC ===\n';
+            summary += `API: ${testResult.success ? 'OK' : 'ERREUR - ' + testResult.error}\n`;
+            summary += `Version: ${testResult.version || 'inconnue'}\n`;
+            summary += `Total réservations: ${allResult.reservations?.length || 0}\n`;
+            summary += `Réservations pour ${state.selectedDate}: ${dateResult.reservations?.length || 0}\n`;
+
+            if (allResult.reservations?.length > 0) {
+                summary += '\nDates des réservations:\n';
+                const dates = [...new Set(allResult.reservations.map(r => r.date))];
+                dates.forEach(d => {
+                    const count = allResult.reservations.filter(r => r.date === d).length;
+                    summary += `  - ${d}: ${count} réservation(s)\n`;
+                });
+            }
+
+            alert(summary);
+        }
+
+        // Raccourci clavier pour le diagnostic: Ctrl+Shift+D
+        document.addEventListener('keydown', e => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                e.preventDefault();
+                runDiagnostic();
+            }
         });
     </script>
 </body>

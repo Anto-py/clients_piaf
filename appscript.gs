@@ -195,7 +195,7 @@ function handleRequest(e) {
         break;
         
       case 'test':
-        result = { success: true, message: 'API OK', timestamp: new Date().toISOString() };
+        result = { success: true, message: 'API OK', version: 'v5.1-debug', timestamp: new Date().toISOString() };
         break;
       
       case 'getReservations':
@@ -704,25 +704,37 @@ function getReservations(date, status) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Reservations');
   const data = sheet.getDataRange().getValues();
-  
+
   const reservations = [];
   const normalizedFilterDate = date ? normalizeDate(date) : null;
-  
+
+  Logger.log('getReservations - Filtre date: ' + date + ' -> normalisé: ' + normalizedFilterDate);
+  Logger.log('getReservations - Nombre de lignes dans le sheet: ' + (data.length - 1));
+
   for (let i = 1; i < data.length; i++) {
     const row = data[i];
     if (!row[0]) continue;
-    
+
+    const rawDate = row[1];
     const rowDate = normalizeDate(row[1]);
-    if (normalizedFilterDate && rowDate !== normalizedFilterDate) continue;
+
+    Logger.log('getReservations - Ligne ' + i + ': ID=' + row[0] + ', Date brute=' + rawDate + ' (type: ' + typeof rawDate + '), Date normalisée=' + rowDate);
+
+    if (normalizedFilterDate && rowDate !== normalizedFilterDate) {
+      Logger.log('getReservations - Ligne ' + i + ' ignorée: date ne correspond pas (' + rowDate + ' != ' + normalizedFilterDate + ')');
+      continue;
+    }
     if (status && row[8] !== status) continue;
-    
+
     reservations.push({
       id: row[0], date: rowDate, heure: row[2], personnes: row[3],
       nom: row[4], telephone: row[5], email: row[6], langue: row[7],
       statut: row[8], tables: row[9], creeLe: row[10], commentaire: row[11]
     });
   }
-  
+
+  Logger.log('getReservations - Réservations retournées: ' + reservations.length);
+
   return { success: true, reservations };
 }
 
@@ -834,14 +846,19 @@ function getClosuresForDate(dateStr) {
 
 function getDashboardData(dateStr) {
   const date = dateStr || formatDateToYYYYMMDD(new Date());
+
+  Logger.log('getDashboardData - Date demandée: ' + dateStr + ' -> normalisée: ' + date);
+
   const reservations = getReservationsForDate(date);
-  
+
+  Logger.log('getDashboardData - Réservations trouvées: ' + reservations.length);
+
   const pending = reservations.filter(r => r.statut === 'en attente').length;
   const confirmed = reservations.filter(r => r.statut === 'confirmée').length;
   const totalGuests = reservations
     .filter(r => r.statut === 'confirmée')
     .reduce((sum, r) => sum + (parseInt(r.personnes) || 0), 0);
-  
+
   return {
     success: true,
     date,
