@@ -873,12 +873,18 @@ function getDashboardData(dateStr) {
 // ============================================
 
 function sendConfirmationEmail(reservation) {
+  Logger.log('sendConfirmationEmail appelée avec: ' + JSON.stringify(reservation));
+
   // Ne pas envoyer d'email si pas d'adresse client
-  if (!reservation.email) return;
-  
+  if (!reservation.email) {
+    Logger.log('Pas d\'email client - abandon');
+    return;
+  }
+
   const restaurantName = getConfig('NOM_RESTAURANT');
   const restaurantPhone = getConfig('TELEPHONE');
-  
+  Logger.log('Restaurant: ' + restaurantName + ', envoi à: ' + reservation.email);
+
   const templates = {
     fr: {
       subject: `Confirmation de votre réservation - ${restaurantName}`,
@@ -930,9 +936,11 @@ Het ${restaurantName} team`
   const template = templates[reservation.langue] || templates.fr;
   
   try {
+    Logger.log('Tentative envoi email à ' + reservation.email);
     GmailApp.sendEmail(reservation.email, template.subject, template.body);
+    Logger.log('Email envoyé avec succès à ' + reservation.email);
   } catch (e) {
-    Logger.log('Erreur email confirmation: ' + e);
+    Logger.log('ERREUR email confirmation: ' + e.toString());
   }
 }
 
