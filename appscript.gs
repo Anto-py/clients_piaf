@@ -873,10 +873,7 @@ function getDashboardData(dateStr) {
 // ============================================
 
 function sendConfirmationEmail(reservation) {
-  const emailSender = getConfig('EMAIL_ENVOI');
-  if (!emailSender) return;
-  
-  // Ne pas envoyer d'email si pas d'adresse
+  // Ne pas envoyer d'email si pas d'adresse client
   if (!reservation.email) return;
   
   const restaurantName = getConfig('NOM_RESTAURANT');
