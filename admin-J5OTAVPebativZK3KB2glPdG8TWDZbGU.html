@@ -760,9 +760,291 @@
             font-size: 0.9rem;
         }
 
+        /* ============================================
+           RESPONSIVE MOBILE
+           ============================================ */
+
+        /* Barre de navigation mobile */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bleu-piaf);
+            padding: 0.5rem 1rem;
+            z-index: 200;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+        }
+
+        .mobile-nav-buttons {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .mobile-nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.8);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 0.75rem;
+            flex: 1;
+        }
+
+        .mobile-nav-btn:hover,
+        .mobile-nav-btn.active {
+            background: rgba(255,255,255,0.15);
+            color: var(--blanc);
+        }
+
+        .mobile-nav-btn .icon {
+            font-size: 1.25rem;
+        }
+
+        .mobile-nav-btn .badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--orange);
+            color: white;
+            font-size: 0.65rem;
+            padding: 0.1rem 0.35rem;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        .mobile-nav-btn-wrapper {
+            position: relative;
+            flex: 1;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Panneau mobile (slide-up) */
+        .mobile-panel {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            top: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 300;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .mobile-panel.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .mobile-panel-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 85vh;
+            background: var(--blanc);
+            border-radius: 16px 16px 0 0;
+            padding: 1rem;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-panel.active .mobile-panel-content {
+            transform: translateY(0);
+        }
+
+        .mobile-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--gris-bordure);
+        }
+
+        .mobile-panel-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--bleu-piaf);
+        }
+
+        .mobile-panel-close {
+            background: var(--gris-fond);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--gris-texte);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-panel-close:hover {
+            background: var(--gris-bordure);
+            color: var(--noir);
+        }
+
+        /* Stats mobiles dans le panneau calendrier */
+        .mobile-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gris-bordure);
+        }
+
+        .mobile-stat-card {
+            background: var(--gris-fond);
+            padding: 0.75rem;
+            text-align: center;
+            border-radius: 8px;
+        }
+
+        .mobile-stat-card .stat-value {
+            font-size: 1.25rem;
+        }
+
+        .mobile-stat-card .stat-label {
+            font-size: 0.7rem;
+        }
+
+        /* Bouton date mobile dans le header */
+        .mobile-date-btn {
+            display: none;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            color: var(--blanc);
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-date-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
         @media (max-width: 1200px) {
-            .container { grid-template-columns: 1fr; }
+            .container {
+                grid-template-columns: 1fr;
+                padding-bottom: 70px; /* Espace pour la nav mobile */
+            }
             .sidebar-left, .sidebar-right { display: none; }
+            .mobile-nav { display: block; }
+            .mobile-panel { display: block; }
+            .mobile-date-btn { display: block; }
+            .header-date { display: none; }
+
+            /* Ajustement du header pour mobile */
+            header {
+                padding: 0.75rem 1rem;
+            }
+
+            .header-info {
+                gap: 0.5rem;
+            }
+
+            .refresh-btn {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            /* Grille des tables responsive */
+            .tables-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0.5rem;
+                padding: 1rem;
+            }
+
+            .table-item {
+                font-size: 0.75rem;
+            }
+
+            .table-number {
+                font-size: 1rem;
+            }
+
+            /* Formulaires responsives */
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .table-selector {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0.5rem;
+            }
+
+            /* Contenu principal */
+            .main-content {
+                padding: 1rem;
+            }
+
+            .date-header {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: flex-start;
+            }
+
+            .current-date {
+                font-size: 1.25rem;
+            }
+
+            .add-reservation-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Très petits écrans */
+            .tables-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .table-selector {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .mobile-nav-btn {
+                padding: 0.4rem 0.5rem;
+                font-size: 0.65rem;
+            }
+
+            .mobile-nav-btn .icon {
+                font-size: 1.1rem;
+            }
+
+            .reservation-card {
+                padding: 0.75rem;
+            }
+
+            .reservation-actions {
+                flex-wrap: wrap;
+            }
+
+            .reservation-actions .btn {
+                flex: 1 1 45%;
+            }
         }
     </style>
 </head>
@@ -774,6 +1056,9 @@
                 <span class="dot"></span>
                 <span id="apiStatusText">Connexion...</span>
             </div>
+            <button class="mobile-date-btn" onclick="openMobilePanel('calendar')">
+                📅 <span id="mobileDateText"></span>
+            </button>
             <div class="header-date" id="headerDate"></div>
             <button class="refresh-btn" id="refreshBtn" onclick="loadDashboard()">↻ Actualiser</button>
         </div>
@@ -847,6 +1132,96 @@
             <h2 class="section-title" style="margin-top: 2rem;">Confirmées aujourd'hui</h2>
             <div class="pending-list" id="confirmedList"></div>
         </aside>
+    </div>
+
+    <!-- Barre de navigation mobile -->
+    <nav class="mobile-nav">
+        <div class="mobile-nav-buttons">
+            <button class="mobile-nav-btn" onclick="openMobilePanel('calendar')">
+                <span class="icon">📅</span>
+                <span>Calendrier</span>
+            </button>
+            <button class="mobile-nav-btn" onclick="openMobilePanel('reservations')">
+                <span class="icon">🍽️</span>
+                <span>Réservations</span>
+            </button>
+            <div class="mobile-nav-btn-wrapper">
+                <button class="mobile-nav-btn" onclick="openMobilePanel('pending')">
+                    <span class="icon">⏳</span>
+                    <span>En attente</span>
+                </button>
+                <span class="badge" id="mobilePendingBadge" style="display: none;">0</span>
+            </div>
+            <button class="mobile-nav-btn" onclick="openManualReservationModal()">
+                <span class="icon">➕</span>
+                <span>Ajouter</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Panneau mobile: Calendrier -->
+    <div class="mobile-panel" id="mobileCalendarPanel" onclick="closeMobilePanelOnOverlay(event, 'mobileCalendarPanel')">
+        <div class="mobile-panel-content">
+            <div class="mobile-panel-header">
+                <h3 class="mobile-panel-title">📅 Calendrier</h3>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('mobileCalendarPanel')">×</button>
+            </div>
+
+            <!-- Calendrier mobile -->
+            <div class="calendar">
+                <div class="calendar-header">
+                    <span class="calendar-month" id="mobileCalendarMonth"></span>
+                    <div class="calendar-nav">
+                        <button onclick="changeMonth(-1); updateMobileCalendar();">‹</button>
+                        <button onclick="changeMonth(1); updateMobileCalendar();">›</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="mobileCalendarGrid"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="mobile-stats">
+                <div class="mobile-stat-card">
+                    <span class="stat-value pending" id="mobileStatPending">-</span>
+                    <span class="stat-label">En attente</span>
+                </div>
+                <div class="mobile-stat-card">
+                    <span class="stat-value confirmed" id="mobileStatConfirmed">-</span>
+                    <span class="stat-label">Confirmées</span>
+                </div>
+                <div class="mobile-stat-card">
+                    <span class="stat-value" id="mobileStatGuests">-</span>
+                    <span class="stat-label">Couverts</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau mobile: Demandes en attente -->
+    <div class="mobile-panel" id="mobilePendingPanel" onclick="closeMobilePanelOnOverlay(event, 'mobilePendingPanel')">
+        <div class="mobile-panel-content">
+            <div class="mobile-panel-header">
+                <h3 class="mobile-panel-title">⏳ Demandes en attente</h3>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('mobilePendingPanel')">×</button>
+            </div>
+            <div class="pending-list" id="mobilePendingList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Chargement...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panneau mobile: Réservations du jour -->
+    <div class="mobile-panel" id="mobileReservationsPanel" onclick="closeMobilePanelOnOverlay(event, 'mobileReservationsPanel')">
+        <div class="mobile-panel-content">
+            <div class="mobile-panel-header">
+                <h3 class="mobile-panel-title">🍽️ Réservations du jour</h3>
+                <button class="mobile-panel-close" onclick="closeMobilePanel('mobileReservationsPanel')">×</button>
+            </div>
+            <div class="pending-list" id="mobileReservationsList"></div>
+        </div>
     </div>
 
     <!-- Modal Confirmation avec sélection de tables -->
@@ -2033,6 +2408,173 @@
                 e.preventDefault();
                 runDiagnostic();
             }
+        });
+
+        // ============================================
+        // GESTION MOBILE
+        // ============================================
+
+        function openMobilePanel(panel) {
+            // Fermer tous les panneaux d'abord
+            document.querySelectorAll('.mobile-panel').forEach(p => {
+                p.classList.remove('active');
+            });
+
+            let panelId;
+            switch(panel) {
+                case 'calendar':
+                    panelId = 'mobileCalendarPanel';
+                    updateMobileCalendar();
+                    updateMobileStats();
+                    break;
+                case 'pending':
+                    panelId = 'mobilePendingPanel';
+                    renderMobilePendingList();
+                    break;
+                case 'reservations':
+                    panelId = 'mobileReservationsPanel';
+                    renderMobileReservationsList();
+                    break;
+            }
+
+            if (panelId) {
+                document.getElementById(panelId).classList.add('active');
+            }
+        }
+
+        function closeMobilePanel(panelId) {
+            document.getElementById(panelId).classList.remove('active');
+        }
+
+        function closeMobilePanelOnOverlay(event, panelId) {
+            if (event.target.classList.contains('mobile-panel')) {
+                closeMobilePanel(panelId);
+            }
+        }
+
+        function updateMobileCalendar() {
+            const year = state.currentMonth.getFullYear();
+            const month = state.currentMonth.getMonth();
+
+            document.getElementById('mobileCalendarMonth').textContent = `${MONTHS[month]} ${year}`;
+
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const startDay = firstDay.getDay();
+
+            let html = DAYS.map(d => `<div class="calendar-day-name">${d}</div>`).join('');
+
+            for (let i = 0; i < startDay; i++) {
+                html += '<div class="calendar-day"></div>';
+            }
+
+            const today = new Date().toISOString().split('T')[0];
+
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dayOfWeek = new Date(year, month, day).getDay();
+                const isClosed = dayOfWeek === 1 || dayOfWeek === 2;
+
+                let classes = 'calendar-day';
+                if (dateStr === today) classes += ' today';
+                if (dateStr === state.selectedDate) classes += ' selected';
+                if (isClosed) classes += ' closed';
+
+                html += `<div class="${classes}" onclick="selectDateMobile('${dateStr}')">${day}</div>`;
+            }
+
+            document.getElementById('mobileCalendarGrid').innerHTML = html;
+        }
+
+        function selectDateMobile(dateStr) {
+            state.selectedDate = dateStr;
+            updateMobileCalendar();
+            renderCalendar();
+            loadDashboard();
+            updateMobileDateText();
+            closeMobilePanel('mobileCalendarPanel');
+        }
+
+        function updateMobileStats() {
+            // Copier les stats depuis les éléments principaux
+            document.getElementById('mobileStatPending').textContent =
+                document.getElementById('statPending').textContent;
+            document.getElementById('mobileStatConfirmed').textContent =
+                document.getElementById('statConfirmed').textContent;
+            document.getElementById('mobileStatGuests').textContent =
+                document.getElementById('statGuests').textContent;
+        }
+
+        function renderMobilePendingList() {
+            const container = document.getElementById('mobilePendingList');
+            const pending = state.allPendingReservations;
+
+            if (pending.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✓</div>
+                        <p>Aucune demande en attente</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pending.map(r => renderReservationCard(r, true, true)).join('');
+        }
+
+        function renderMobileReservationsList() {
+            const container = document.getElementById('mobileReservationsList');
+            const sorted = [...state.reservations].sort((a, b) => a.heure.localeCompare(b.heure));
+
+            if (sorted.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📅</div>
+                        <p>Aucune réservation pour cette date</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sorted.map(r => renderReservationCard(r, r.statut === 'en attente')).join('');
+        }
+
+        function updateMobileDateText() {
+            const date = new Date(state.selectedDate);
+            const text = `${date.getDate()} ${MONTHS[date.getMonth()].substring(0, 3)}`;
+            document.getElementById('mobileDateText').textContent = text;
+        }
+
+        function updateMobilePendingBadge() {
+            const badge = document.getElementById('mobilePendingBadge');
+            const count = state.allPendingReservations.length;
+
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Modifier renderPendingList pour mettre à jour le badge mobile aussi
+        const originalRenderPendingList = renderPendingList;
+        renderPendingList = function() {
+            originalRenderPendingList();
+            updateMobilePendingBadge();
+        };
+
+        // Modifier loadDashboard pour mettre à jour les stats mobile
+        const originalLoadDashboard = loadDashboard;
+        loadDashboard = async function() {
+            await originalLoadDashboard();
+            updateMobileStats();
+            updateMobileDateText();
+        };
+
+        // Initialisation mobile au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            updateMobileDateText();
         });
     </script>
 </body>
