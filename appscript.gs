@@ -884,7 +884,7 @@ function sendConfirmationEmail(reservation) {
   
   const templates = {
     fr: {
-      subject: `Réservation confirmée - ${restaurantName}`,
+      subject: `Confirmation de votre réservation - ${restaurantName}`,
       body: `Bonjour ${reservation.nom},
 
 Nous avons le plaisir de vous confirmer votre réservation :
@@ -933,9 +933,9 @@ Het ${restaurantName} team`
   const template = templates[reservation.langue] || templates.fr;
   
   try {
-    MailApp.sendEmail({ to: reservation.email, subject: template.subject, body: template.body });
+    GmailApp.sendEmail(reservation.email, template.subject, template.body);
   } catch (e) {
-    Logger.log('Erreur email: ' + e);
+    Logger.log('Erreur email confirmation: ' + e);
   }
 }
 
