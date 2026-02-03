@@ -937,10 +937,12 @@ Het ${restaurantName} team`
   
   try {
     Logger.log('Tentative envoi email à ' + reservation.email);
-    GmailApp.sendEmail(reservation.email, template.subject, template.body);
+    Logger.log('Sujet: ' + template.subject);
+    MailApp.sendEmail(reservation.email, template.subject, template.body);
     Logger.log('Email envoyé avec succès à ' + reservation.email);
   } catch (e) {
     Logger.log('ERREUR email confirmation: ' + e.toString());
+    Logger.log('Stack: ' + e.stack);
   }
 }
 
