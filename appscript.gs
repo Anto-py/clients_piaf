@@ -746,12 +746,18 @@ function getReservationsForDate(dateStr) {
  * Met à jour le statut d'une réservation
  */
 function updateReservationStatus(id, newStatus, comment = '', tables = null) {
+  Logger.log('updateReservationStatus appelée - id: ' + id + ', newStatus: ' + newStatus + ', tables: ' + tables);
+
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName('Reservations');
   const data = sheet.getDataRange().getValues();
-  
+
+  // Convertir l'ID en string pour comparaison cohérente
+  const idStr = String(id);
+
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === id) {
+    if (String(data[i][0]) === idStr) {
+      Logger.log('Réservation trouvée à la ligne ' + (i+1));
       // Mettre à jour le statut
       sheet.getRange(i + 1, 9).setValue(newStatus);
       
@@ -779,8 +785,13 @@ function updateReservationStatus(id, newStatus, comment = '', tables = null) {
       };
       
       // Envoyer l'email approprié
+      Logger.log('Données réservation pour email: ' + JSON.stringify(reservation));
+      Logger.log('newStatus: "' + newStatus + '" - comparaison avec "confirmée": ' + (newStatus === 'confirmée'));
+
       if (newStatus === 'confirmée') {
+        Logger.log('>>> Appel de sendConfirmationEmail');
         sendConfirmationEmail(reservation);
+        Logger.log('>>> Retour de sendConfirmationEmail');
       } else if (newStatus === 'refusée') {
         sendRefusalEmail(reservation, comment);
       }
