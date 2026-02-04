@@ -279,14 +279,6 @@
             flex-wrap: wrap;
         }
 
-        .floor-date-picker {
-            padding: 0.5rem 1rem;
-            border: 1px solid var(--gris-bordure);
-            font-family: inherit;
-            font-size: 0.9rem;
-            background: var(--blanc);
-        }
-
         .slot-buttons {
             display: none;
             gap: 0.5rem;
@@ -1388,7 +1380,6 @@
                 <h2 class="section-title">Plan des tables</h2>
 
                 <div class="floor-controls">
-                    <input type="date" class="floor-date-picker" id="floorDatePicker">
                     <div class="slot-buttons" id="slotButtons">
                         <button class="slot-btn active" data-slot="morning" onclick="selectSlot('morning')">11h - 12h45</button>
                         <button class="slot-btn" data-slot="afternoon" onclick="selectSlot('afternoon')">13h</button>
@@ -2481,13 +2472,6 @@
         // ============================================
 
         function initFloorPlan() {
-            const datePicker = document.getElementById('floorDatePicker');
-            datePicker.value = state.selectedDate;
-            datePicker.addEventListener('change', (e) => {
-                const newDate = e.target.value;
-                state.selectedDate = newDate;
-                loadDashboard();
-            });
             updateSlotButtonsVisibility();
         }
 
@@ -2535,12 +2519,6 @@
 
         function renderTables() {
             const container = document.getElementById('floorGrid');
-            const datePicker = document.getElementById('floorDatePicker');
-
-            // Mettre a jour la date si necessaire
-            if (datePicker.value !== state.selectedDate) {
-                datePicker.value = state.selectedDate;
-            }
             updateSlotButtonsVisibility();
 
             // Filtrer les reservations selon le creneau
