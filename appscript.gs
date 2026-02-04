@@ -29,7 +29,12 @@ const CONFIG = {
     5: { open: true, services: [{ start: '18:30', end: '21:30' }] },
     6: { open: true, services: [{ start: '11:00', end: '15:00' }] }
   },
-  TABLES: { count: 8, seatsPerTable: 4, maxGroupSize: 8, minGuests: 2 },
+  TABLES: {
+    list: [1, 2, 10, 11, 12, 13, 14, 15, 16, 17],
+    capacity: { 1: 4, 2: 2, 10: 4, 11: 4, 12: 2, 13: 2, 14: 4, 15: 2, 16: 2, 17: 2 },
+    maxGroupSize: 8,
+    minGuests: 2
+  },
   OCCUPATION_DURATION: 120, // durée d'occupation en minutes (2 heures)
   MIN_ADVANCE_HOURS: 2,
   MAX_ADVANCE_DAYS: 10,
@@ -421,17 +426,60 @@ function getAvailableTablesForSlot(dateStr, slotTime, reservations, guests) {
   });
   
   const availableTables = [];
-  for (let i = 1; i <= CONFIG.TABLES.count; i++) {
-    if (!occupiedTables.has(i)) availableTables.push(i);
-  }
-  
-  const tablesNeeded = guests <= 4 ? 1 : 2;
-  
+  CONFIG.TABLES.list.forEach(tableNum => {
+    if (!occupiedTables.has(tableNum)) availableTables.push(tableNum);
+  });
+
+  // Calculer la capacité totale disponible
+  const totalCapacity = availableTables.reduce((sum, t) => sum + CONFIG.TABLES.capacity[t], 0);
+
+  // Trouver la meilleure combinaison de tables pour le groupe
+  const canAccommodate = findTablesForGuests(availableTables, guests) !== null;
+
   return {
     tables: availableTables,
-    canAccommodate: availableTables.length >= tablesNeeded,
-    canGroup: guests > 4 && availableTables.length >= 2
+    canAccommodate: canAccommodate,
+    totalCapacity: totalCapacity,
+    canGroup: guests > 4 && totalCapacity >= guests
   };
+}
+
+/**
+ * Trouve la meilleure combinaison de tables pour un nombre de convives
+ * Retourne un tableau de numéros de tables ou null si impossible
+ */
+function findTablesForGuests(availableTables, guests) {
+  // Trier les tables par capacité décroissante pour optimiser
+  const sorted = [...availableTables].sort((a, b) =>
+    CONFIG.TABLES.capacity[b] - CONFIG.TABLES.capacity[a]
+  );
+
+  // Essayer de trouver une seule table suffisante
+  for (const table of sorted) {
+    if (CONFIG.TABLES.capacity[table] >= guests) {
+      return [table];
+    }
+  }
+
+  // Sinon, chercher une combinaison de tables
+  let bestCombo = null;
+  let minWaste = Infinity;
+
+  // Essayer toutes les combinaisons de 2 tables
+  for (let i = 0; i < sorted.length; i++) {
+    for (let j = i + 1; j < sorted.length; j++) {
+      const capacity = CONFIG.TABLES.capacity[sorted[i]] + CONFIG.TABLES.capacity[sorted[j]];
+      if (capacity >= guests) {
+        const waste = capacity - guests;
+        if (waste < minWaste) {
+          minWaste = waste;
+          bestCombo = [sorted[i], sorted[j]];
+        }
+      }
+    }
+  }
+
+  return bestCombo;
 }
 
 // ============================================
@@ -459,10 +507,10 @@ function createReservation(data) {
   if (!availability.canAccommodate) {
     return { success: false, error: 'Plus de tables disponibles' };
   }
-  
+
   // Attribution automatique (sera modifiable lors de la confirmation)
-  const tablesNeeded = guests <= 4 ? 1 : 2;
-  const assignedTables = availability.tables.slice(0, tablesNeeded).join(', ');
+  const suggestedTables = findTablesForGuests(availability.tables, guests);
+  const assignedTables = suggestedTables ? suggestedTables.join(', ') : '';
   
   const id = 'RES-' + Date.now().toString(36).toUpperCase();
   

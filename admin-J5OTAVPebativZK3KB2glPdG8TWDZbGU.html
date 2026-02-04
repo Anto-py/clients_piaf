@@ -270,49 +270,299 @@
 
         .tables-overview { margin-top: 2rem; }
 
-        .tables-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+        /* Controles du plan (date + creneaux) */
+        .floor-controls {
+            display: flex;
+            align-items: center;
             gap: 1rem;
-            background: var(--blanc);
-            padding: 1.5rem;
-            border-radius: 0;
-            border: 1px solid var(--gris-bordure);
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
         }
 
+        .floor-date-picker {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--gris-bordure);
+            font-family: inherit;
+            font-size: 0.9rem;
+            background: var(--blanc);
+        }
+
+        .slot-buttons {
+            display: none;
+            gap: 0.5rem;
+        }
+
+        .slot-buttons.visible {
+            display: flex;
+        }
+
+        .slot-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--bleu-piaf);
+            background: var(--blanc);
+            color: var(--bleu-piaf);
+            font-family: inherit;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .slot-btn:hover {
+            background: var(--bleu-hover);
+            color: var(--blanc);
+        }
+
+        .slot-btn.active {
+            background: var(--bleu-piaf);
+            color: var(--blanc);
+        }
+
+        /* Plan du restaurant */
+        .floor-plan {
+            background: var(--blanc);
+            border: 1px solid var(--gris-bordure);
+            padding: 1.5rem;
+            position: relative;
+            min-height: 500px;
+        }
+
+        .floor-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            grid-template-rows: auto 1fr 1fr auto;
+            gap: 0.75rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Tables */
         .table-item {
-            aspect-ratio: 1;
             background: var(--gris-fond);
             border: 2px solid var(--gris-bordure);
-            border-radius: 0;
+            padding: 0.75rem 0.5rem;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 70px;
+            position: relative;
         }
 
-        .table-item.available { border-color: var(--vert); background: rgba(45, 90, 61, 0.1); }
-        .table-item.occupied { border-color: var(--bleu-piaf); background: rgba(42, 53, 147, 0.1); }
+        .table-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10;
+        }
+
+        /* Couleurs selon statut */
+        .table-item.libre {
+            border-color: var(--vert);
+            background: rgba(45, 90, 61, 0.15);
+        }
+
+        .table-item.partielle {
+            border-color: var(--orange);
+            background: rgba(212, 118, 58, 0.15);
+        }
+
+        .table-item.complete {
+            border-color: var(--rouge);
+            background: rgba(220, 53, 69, 0.15);
+        }
 
         .table-number {
-            font-weight: 300;
-            font-size: 1.25rem;
-            font-family: 'Montserrat', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            font-weight: 600;
+            font-size: 1.1rem;
+            font-family: 'Montserrat', sans-serif;
         }
 
-        .table-status {
+        .table-capacity {
             font-size: 0.7rem;
             color: var(--gris-texte);
-            margin-top: 0.25rem;
-            text-align: center;
+            margin-top: 0.15rem;
         }
 
-        .table-time {
-            font-size: 0.65rem;
+        .table-places {
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+
+        .table-item.libre .table-places { color: var(--vert); }
+        .table-item.partielle .table-places { color: var(--orange); }
+        .table-item.complete .table-places { color: var(--rouge); }
+
+        /* Positionnement des tables selon le plan */
+        .table-16 { grid-column: 1; grid-row: 1; }
+        .table-15 { grid-column: 2; grid-row: 1; }
+        .table-14 { grid-column: 3; grid-row: 1; }
+        .table-13 { grid-column: 4; grid-row: 1; }
+        .table-12 { grid-column: 5; grid-row: 1; }
+        .table-11 { grid-column: 6; grid-row: 1; }
+        .table-17 { grid-column: 1; grid-row: 2; }
+        .table-10 { grid-column: 6; grid-row: 2 / 4; }
+        .table-1 { grid-column: 1; grid-row: 4; }
+        .table-2 { grid-column: 2; grid-row: 4; }
+
+        /* Cuisine */
+        .kitchen {
+            grid-column: 3 / 6;
+            grid-row: 2 / 4;
+            background: repeating-linear-gradient(
+                45deg,
+                var(--gris-fond),
+                var(--gris-fond) 10px,
+                var(--blanc) 10px,
+                var(--blanc) 20px
+            );
+            border: 2px solid var(--gris-bordure);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            color: var(--gris-texte);
+            font-size: 1rem;
+            min-height: 140px;
+        }
+
+        /* Modal details table */
+        .table-detail-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .table-detail-modal.active {
+            display: flex;
+        }
+
+        .table-detail-content {
+            background: var(--blanc);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .table-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gris-bordure);
+        }
+
+        .table-detail-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .table-detail-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gris-texte);
+        }
+
+        .table-reservations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .table-resa-item {
+            padding: 1rem;
+            background: var(--gris-fond);
+            border-left: 3px solid var(--bleu-piaf);
+        }
+
+        .table-resa-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .table-resa-info {
+            font-size: 0.85rem;
+            color: var(--gris-texte);
+        }
+
+        .move-table-btn {
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            background: var(--blanc);
+            border: 1px solid var(--bleu-piaf);
             color: var(--bleu-piaf);
-            margin-top: 0.15rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .move-table-btn:hover {
+            background: var(--bleu-piaf);
+            color: var(--blanc);
+        }
+
+        .no-reservations {
+            color: var(--gris-texte);
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .floor-grid {
+                grid-template-columns: repeat(4, 1fr);
+                grid-template-rows: auto auto 1fr auto auto;
+                gap: 0.5rem;
+            }
+
+            .table-16 { grid-column: 1; grid-row: 1; }
+            .table-15 { grid-column: 2; grid-row: 1; }
+            .table-14 { grid-column: 3; grid-row: 1; }
+            .table-13 { grid-column: 4; grid-row: 1; }
+            .table-12 { grid-column: 1; grid-row: 2; }
+            .table-11 { grid-column: 2; grid-row: 2; }
+            .table-17 { grid-column: 3; grid-row: 2; }
+            .table-10 { grid-column: 4; grid-row: 2; }
+
+            .kitchen {
+                grid-column: 1 / 5;
+                grid-row: 3;
+                min-height: 80px;
+            }
+
+            .table-1 { grid-column: 1 / 3; grid-row: 4; }
+            .table-2 { grid-column: 3 / 5; grid-row: 4; }
+
+            .table-item {
+                min-height: 60px;
+                padding: 0.5rem;
+            }
+
+            .table-number {
+                font-size: 1rem;
+            }
+
+            .floor-plan {
+                padding: 1rem;
+                min-height: auto;
+            }
+
+            .floor-controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
         }
 
         .sidebar-right {
@@ -1133,8 +1383,34 @@
             </div>
 
             <div class="tables-overview">
-                <h2 class="section-title">État des tables</h2>
-                <div class="tables-grid" id="tablesGrid"></div>
+                <h2 class="section-title">Plan des tables</h2>
+
+                <div class="floor-controls">
+                    <input type="date" class="floor-date-picker" id="floorDatePicker">
+                    <div class="slot-buttons" id="slotButtons">
+                        <button class="slot-btn active" data-slot="morning" onclick="selectSlot('morning')">11h - 12h45</button>
+                        <button class="slot-btn" data-slot="afternoon" onclick="selectSlot('afternoon')">13h</button>
+                    </div>
+                </div>
+
+                <div class="floor-plan">
+                    <div class="floor-grid" id="floorGrid">
+                        <!-- Les tables seront generees par JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal details table -->
+            <div class="table-detail-modal" id="tableDetailModal">
+                <div class="table-detail-content">
+                    <div class="table-detail-header">
+                        <span class="table-detail-title" id="tableDetailTitle">Table X</span>
+                        <button class="table-detail-close" onclick="closeTableDetail()">&times;</button>
+                    </div>
+                    <div id="tableDetailBody">
+                        <!-- Contenu genere par JavaScript -->
+                    </div>
+                </div>
             </div>
 
             <div style="margin-top: 2rem;">
@@ -1441,6 +1717,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             updateHeaderDate();
             renderCalendar();
+            initFloorPlan();
             loadDashboard();
             loadAllPendingReservations();
             loadClosures();
@@ -2181,17 +2458,92 @@
         }
 
         // ============================================
+        // CONFIGURATION DES TABLES
+        // ============================================
+
+        const TABLES_CONFIG = {
+            list: [1, 2, 10, 11, 12, 13, 14, 15, 16, 17],
+            capacity: { 1: 4, 2: 2, 10: 4, 11: 4, 12: 2, 13: 2, 14: 4, 15: 2, 16: 2, 17: 2 }
+        };
+
+        // Creneau selectionne pour le dimanche
+        let selectedSlot = 'morning'; // 'morning' = 11h-12h45, 'afternoon' = 13h
+
+        // ============================================
         // AFFICHAGE DES TABLES
         // ============================================
-        
+
+        function initFloorPlan() {
+            const datePicker = document.getElementById('floorDatePicker');
+            datePicker.value = state.selectedDate;
+            datePicker.addEventListener('change', (e) => {
+                const newDate = e.target.value;
+                state.selectedDate = newDate;
+                loadDashboard();
+            });
+            updateSlotButtonsVisibility();
+        }
+
+        function updateSlotButtonsVisibility() {
+            const date = new Date(state.selectedDate);
+            const dayOfWeek = date.getDay();
+            const slotButtons = document.getElementById('slotButtons');
+
+            // Dimanche = 0
+            if (dayOfWeek === 0) {
+                slotButtons.classList.add('visible');
+            } else {
+                slotButtons.classList.remove('visible');
+            }
+        }
+
+        function selectSlot(slot) {
+            selectedSlot = slot;
+            document.querySelectorAll('.slot-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.slot === slot);
+            });
+            renderTables();
+        }
+
+        function getReservationsForSlot(reservations) {
+            const date = new Date(state.selectedDate);
+            const dayOfWeek = date.getDay();
+
+            // Si ce n'est pas dimanche, retourner toutes les reservations confirmees
+            if (dayOfWeek !== 0) {
+                return reservations.filter(r => r.statut === 'confirmée');
+            }
+
+            // Dimanche: filtrer selon le creneau
+            return reservations.filter(r => {
+                if (r.statut !== 'confirmée') return false;
+                const hour = parseInt(r.heure.split(':')[0]);
+                if (selectedSlot === 'morning') {
+                    return hour < 13;
+                } else {
+                    return hour >= 13;
+                }
+            });
+        }
+
         function renderTables() {
-            const container = document.getElementById('tablesGrid');
-            
-            // Grouper les réservations par table
+            const container = document.getElementById('floorGrid');
+            const datePicker = document.getElementById('floorDatePicker');
+
+            // Mettre a jour la date si necessaire
+            if (datePicker.value !== state.selectedDate) {
+                datePicker.value = state.selectedDate;
+            }
+            updateSlotButtonsVisibility();
+
+            // Filtrer les reservations selon le creneau
+            const slotReservations = getReservationsForSlot(state.reservations);
+
+            // Grouper les reservations par table
             const tableInfo = new Map();
-            
-            state.reservations
-                .filter(r => r.statut === 'confirmée' && r.tables)
+
+            slotReservations
+                .filter(r => r.tables)
                 .forEach(r => {
                     String(r.tables).split(',').forEach(t => {
                         const tableNum = parseInt(t.trim());
@@ -2201,27 +2553,181 @@
                         tableInfo.get(tableNum).push(r);
                     });
                 });
-            
+
             let html = '';
-            for (let i = 1; i <= 8; i++) {
-                const reservations = tableInfo.get(i) || [];
-                const isOccupied = reservations.length > 0;
-                
-                // Trouver la prochaine réservation
-                const nextRes = reservations.sort((a, b) => a.heure.localeCompare(b.heure))[0];
-                
+
+            // Generer les tables
+            TABLES_CONFIG.list.forEach(tableNum => {
+                const capacity = TABLES_CONFIG.capacity[tableNum];
+                const reservations = tableInfo.get(tableNum) || [];
+
+                // Calculer les places occupees
+                let placesOccupees = 0;
+                reservations.forEach(r => {
+                    const tablesUtilisees = String(r.tables).split(',').map(t => parseInt(t.trim()));
+                    // Si la reservation utilise plusieurs tables, repartir les personnes
+                    if (tablesUtilisees.length > 1) {
+                        // Calculer la capacite totale des tables utilisees
+                        const capaciteTotale = tablesUtilisees.reduce((sum, t) => sum + TABLES_CONFIG.capacity[t], 0);
+                        // Proportion pour cette table
+                        placesOccupees += Math.ceil(r.personnes * (capacity / capaciteTotale));
+                    } else {
+                        placesOccupees += parseInt(r.personnes);
+                    }
+                });
+
+                // Ne pas depasser la capacite
+                placesOccupees = Math.min(placesOccupees, capacity);
+                const placesLibres = capacity - placesOccupees;
+
+                // Determiner le statut
+                let statusClass = 'libre';
+                if (placesOccupees >= capacity) {
+                    statusClass = 'complete';
+                } else if (placesOccupees > 0) {
+                    statusClass = 'partielle';
+                }
+
                 html += `
-                    <div class="table-item ${isOccupied ? 'occupied' : 'available'}">
-                        <span class="table-number">${i}</span>
-                        <span class="table-status">
-                            ${isOccupied ? escapeHtml(nextRes.nom) : 'Libre'}
-                        </span>
-                        ${isOccupied ? `<span class="table-time">${nextRes.heure}</span>` : ''}
+                    <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
+                        <span class="table-number">${tableNum}</span>
+                        <span class="table-capacity">${capacity} places</span>
+                        <span class="table-places">${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}</span>
+                    </div>
+                `;
+            });
+
+            // Ajouter la cuisine
+            html += '<div class="kitchen">Cuisine</div>';
+
+            container.innerHTML = html;
+        }
+
+        // ============================================
+        // MODAL DETAILS TABLE
+        // ============================================
+
+        function openTableDetail(tableNum) {
+            const modal = document.getElementById('tableDetailModal');
+            const title = document.getElementById('tableDetailTitle');
+            const body = document.getElementById('tableDetailBody');
+
+            title.textContent = `Table ${tableNum} (${TABLES_CONFIG.capacity[tableNum]} places)`;
+
+            // Filtrer les reservations pour cette table et ce creneau
+            const slotReservations = getReservationsForSlot(state.reservations);
+            const tableReservations = slotReservations.filter(r =>
+                r.tables && String(r.tables).split(',').map(t => parseInt(t.trim())).includes(tableNum)
+            );
+
+            if (tableReservations.length === 0) {
+                body.innerHTML = '<p class="no-reservations">Aucune reservation pour cette table.</p>';
+            } else {
+                body.innerHTML = `
+                    <div class="table-reservations-list">
+                        ${tableReservations.map(r => `
+                            <div class="table-resa-item">
+                                <div class="table-resa-name">${escapeHtml(r.nom)}</div>
+                                <div class="table-resa-info">
+                                    ${r.heure} - ${r.personnes} personne${r.personnes > 1 ? 's' : ''}<br>
+                                    ${r.telephone ? `Tel: ${escapeHtml(r.telephone)}` : ''}
+                                </div>
+                                <button class="move-table-btn" onclick="openMoveTableModal('${r.id}', ${tableNum})">
+                                    Changer de table
+                                </button>
+                            </div>
+                        `).join('')}
                     </div>
                 `;
             }
-            
-            container.innerHTML = html;
+
+            modal.classList.add('active');
+        }
+
+        function closeTableDetail() {
+            document.getElementById('tableDetailModal').classList.remove('active');
+        }
+
+        // ============================================
+        // DEPLACEMENT DE TABLE
+        // ============================================
+
+        function openMoveTableModal(reservationId, currentTable) {
+            closeTableDetail();
+
+            const reservation = state.reservations.find(r => r.id === reservationId);
+            if (!reservation) return;
+
+            // Trouver les tables libres
+            const slotReservations = getReservationsForSlot(state.reservations);
+            const occupiedTables = new Set();
+
+            slotReservations.forEach(r => {
+                if (r.id !== reservationId && r.tables) {
+                    String(r.tables).split(',').forEach(t => {
+                        occupiedTables.add(parseInt(t.trim()));
+                    });
+                }
+            });
+
+            const freeTables = TABLES_CONFIG.list.filter(t =>
+                !occupiedTables.has(t) && TABLES_CONFIG.capacity[t] >= reservation.personnes
+            );
+
+            if (freeTables.length === 0) {
+                showToast('Aucune table libre disponible avec assez de places', 'error');
+                return;
+            }
+
+            // Creer un modal simple pour choisir la nouvelle table
+            const modalHtml = `
+                <div class="table-detail-modal active" id="moveTableModal">
+                    <div class="table-detail-content">
+                        <div class="table-detail-header">
+                            <span class="table-detail-title">Deplacer ${escapeHtml(reservation.nom)}</span>
+                            <button class="table-detail-close" onclick="closeMoveTableModal()">&times;</button>
+                        </div>
+                        <p style="margin-bottom: 1rem; color: var(--gris-texte);">
+                            Reservation de ${reservation.personnes} personne${reservation.personnes > 1 ? 's' : ''} a ${reservation.heure}
+                        </p>
+                        <p style="margin-bottom: 1rem;">Choisir la nouvelle table :</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            ${freeTables.map(t => `
+                                <button class="slot-btn" onclick="moveReservation('${reservationId}', ${t})">
+                                    Table ${t} (${TABLES_CONFIG.capacity[t]} pl.)
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        function closeMoveTableModal() {
+            const modal = document.getElementById('moveTableModal');
+            if (modal) modal.remove();
+        }
+
+        async function moveReservation(reservationId, newTable) {
+            closeMoveTableModal();
+
+            try {
+                const result = await apiCall('confirmReservation', {
+                    id: reservationId,
+                    tables: String(newTable)
+                });
+
+                if (result.success) {
+                    showToast('Reservation deplacee vers la table ' + newTable, 'success');
+                    loadDashboard();
+                } else {
+                    showToast('Erreur: ' + (result.error || 'Echec du deplacement'), 'error');
+                }
+            } catch (e) {
+                showToast('Erreur de connexion', 'error');
+            }
         }
 
         // ============================================
