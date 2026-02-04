@@ -214,6 +214,7 @@
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 0.5rem;
+            flex: 1;
         }
 
         .date-option {
@@ -240,6 +241,40 @@
             opacity: 0.4;
             cursor: not-allowed;
             text-decoration: line-through;
+        }
+
+        /* Navigation des dates */
+        .date-navigation {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .date-nav-btn {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            border: 2px solid var(--gris-bordure);
+            border-radius: 0;
+            background: var(--blanc);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--bleu-piaf);
+            transition: all 0.3s ease;
+        }
+
+        .date-nav-btn:hover:not(:disabled) {
+            border-color: var(--bleu-piaf);
+            background: var(--bleu-piaf);
+            color: var(--blanc);
+        }
+
+        .date-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
 
         .date-day {
@@ -641,8 +676,16 @@
         <!-- Date -->
         <div class="card">
             <h2 class="card-title" data-i18n="date.title">Choisissez une date</h2>
-            <div class="date-grid" id="dateGrid">
-                <!-- Généré par JS -->
+            <div class="date-navigation">
+                <button class="date-nav-btn" id="datePrev" onclick="navigateDates(-1)" disabled>
+                    <span>‹</span>
+                </button>
+                <div class="date-grid" id="dateGrid">
+                    <!-- Généré par JS -->
+                </div>
+                <button class="date-nav-btn" id="dateNext" onclick="navigateDates(1)">
+                    <span>›</span>
+                </button>
             </div>
         </div>
 
@@ -764,7 +807,13 @@
             phone: '',
             email: '',
             lang: 'fr',
-            availableSlots: []
+            availableSlots: [],
+            dateOffset: 0  // Offset pour la navigation des dates (en nombre de pages de 10 jours)
+        };
+
+        const DATE_CONFIG = {
+            DATES_PER_PAGE: 10,      // Nombre de dates affichées par page
+            MAX_ADVANCE_DAYS: 60     // Maximum de jours à l'avance (côté client)
         };
 
         // Horaires pour affichage local (fallback)
@@ -966,20 +1015,28 @@
         // ============================================
         // DATES
         // ============================================
-        
+
         function generateDates() {
             const grid = document.getElementById('dateGrid');
             grid.innerHTML = '';
             const today = new Date();
-            
-            for (let i = 0; i < 10; i++) {
+
+            // Calculer le jour de départ basé sur l'offset
+            const startDay = state.dateOffset * DATE_CONFIG.DATES_PER_PAGE;
+
+            for (let i = 0; i < DATE_CONFIG.DATES_PER_PAGE; i++) {
+                const dayIndex = startDay + i;
+
+                // Ne pas afficher au-delà de la limite maximum
+                if (dayIndex >= DATE_CONFIG.MAX_ADVANCE_DAYS) break;
+
                 const date = new Date(today);
-                date.setDate(today.getDate() + i);
-                
+                date.setDate(today.getDate() + dayIndex);
+
                 const dayOfWeek = date.getDay();
                 const isOpen = schedule[dayOfWeek].open;
                 const t = i18n[state.lang];
-                
+
                 const div = document.createElement('div');
                 div.className = `date-option ${!isOpen ? 'disabled' : ''}`;
                 div.innerHTML = `
@@ -987,15 +1044,37 @@
                     <div class="date-number">${date.getDate()}</div>
                     <div class="date-month">${t.months[date.getMonth()]}</div>
                 `;
-                
+
                 if (isOpen) {
                     div.dataset.date = date.toISOString().split('T')[0];
                     div.dataset.day = dayOfWeek;
                     div.onclick = () => selectDate(div);
                 }
-                
+
                 grid.appendChild(div);
             }
+
+            // Mettre à jour l'état des boutons de navigation
+            updateDateNavButtons();
+        }
+
+        function navigateDates(direction) {
+            const newOffset = state.dateOffset + direction;
+            const maxOffset = Math.ceil(DATE_CONFIG.MAX_ADVANCE_DAYS / DATE_CONFIG.DATES_PER_PAGE) - 1;
+
+            if (newOffset >= 0 && newOffset <= maxOffset) {
+                state.dateOffset = newOffset;
+                generateDates();
+            }
+        }
+
+        function updateDateNavButtons() {
+            const prevBtn = document.getElementById('datePrev');
+            const nextBtn = document.getElementById('dateNext');
+            const maxOffset = Math.ceil(DATE_CONFIG.MAX_ADVANCE_DAYS / DATE_CONFIG.DATES_PER_PAGE) - 1;
+
+            prevBtn.disabled = state.dateOffset === 0;
+            nextBtn.disabled = state.dateOffset >= maxOffset;
         }
 
         async function selectDate(el) {
