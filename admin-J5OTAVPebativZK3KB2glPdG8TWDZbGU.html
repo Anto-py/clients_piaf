@@ -2713,8 +2713,7 @@
 
         /**
          * Retourne les réservations qui occupent une table au créneau sélectionné
-         * Une réservation occupe une table si le créneau sélectionné tombe dans sa "zone protégée"
-         * Zone protégée = [heure réservation - 2h, heure réservation + 2h]
+         * Une table est occupée si le créneau tombe pendant la durée d'occupation de la réservation
          */
         function getReservationsForSlot(reservations) {
             // Si pas de créneau sélectionné, retourner toutes les réservations confirmées
@@ -2723,20 +2722,17 @@
             }
 
             const slotMinutes = timeToMinutes(selectedTimeslot);
-            const slotEnd = slotMinutes + OCCUPATION_DURATION;
 
             return reservations.filter(r => {
                 if (r.statut !== 'confirmée') return false;
+                if (!r.heure) return false;
 
                 const resStart = timeToMinutes(r.heure);
                 const resEnd = resStart + OCCUPATION_DURATION;
 
-                // Zone protégée: de (resStart - OCCUPATION_DURATION) à resEnd
-                const protectedZoneStart = resStart - OCCUPATION_DURATION;
-                const protectedZoneEnd = resEnd;
-
-                // Vérifier si le créneau sélectionné chevauche la zone protégée
-                return (slotMinutes < protectedZoneEnd && slotEnd > protectedZoneStart);
+                // Le créneau sélectionné est-il pendant l'occupation de cette réservation ?
+                // (entre le début de la réservation et sa fin)
+                return (slotMinutes >= resStart && slotMinutes < resEnd);
             });
         }
 
