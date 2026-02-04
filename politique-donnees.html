@@ -56,6 +56,40 @@
             width: auto;
         }
 
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .lang-selector {
+            display: flex;
+            gap: 0.25rem;
+            background: rgba(255,255,255,0.1);
+            padding: 0.25rem;
+        }
+
+        .lang-btn {
+            padding: 0.4rem 0.75rem;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.05em;
+        }
+
+        .lang-btn.active {
+            background: var(--blanc);
+            color: var(--bleu-piaf);
+        }
+
+        .lang-btn:hover:not(.active) {
+            color: var(--blanc);
+        }
+
         .back-link {
             color: var(--blanc);
             text-decoration: none;
@@ -205,6 +239,12 @@
             .policy-section {
                 padding: 1rem;
             }
+
+            .header-right {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-end;
+            }
         }
 
         /* Animations */
@@ -225,75 +265,223 @@
 <body>
     <header>
         <a href="index.html" class="logo"><img src="logo_piaf.png" alt="PIAF - Resto de quartier" class="logo-img"></a>
-        <a href="index.html" class="back-link">
-            <span>&#8592;</span> Retour à la réservation
-        </a>
+        <div class="header-right">
+            <div class="lang-selector">
+                <button class="lang-btn active" onclick="setLang('fr')">FR</button>
+                <button class="lang-btn" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" onclick="setLang('nl')">NL</button>
+            </div>
+            <a href="index.html" class="back-link" data-i18n="back">
+                <span>&#8592;</span> Retour à la réservation
+            </a>
+        </div>
     </header>
 
     <section class="hero">
-        <h1>Politique de traitement des données</h1>
+        <h1 data-i18n="title">Politique de traitement des données</h1>
     </section>
 
     <div class="container">
         <!-- Section 1 -->
         <div class="policy-section">
-            <h2>1. Qui est responsable de vos données ?</h2>
+            <h2 data-i18n="section1.title">1. Qui est responsable de vos données ?</h2>
             <div class="contact-info">
                 <p><strong>Piaf</strong></p>
                 <p>288, avenue de Jette</p>
                 <p>[Numéro de TVA]</p>
                 <p>Email : <a href="mailto:hellopiaf@gmail.com">hellopiaf@gmail.com</a></p>
-                <p>Téléphone : <a href="tel:+32456668560">+32 456 66 85 60</a></p>
+                <p><span data-i18n="phone">Téléphone</span> : <a href="tel:+32456668560">+32 456 66 85 60</a></p>
             </div>
         </div>
 
         <!-- Section 2 -->
         <div class="policy-section">
-            <h2>2. Quelles données collectons-nous ?</h2>
-            <p>Lorsque vous effectuez une réservation, nous collectons :</p>
+            <h2 data-i18n="section2.title">2. Quelles données collectons-nous ?</h2>
+            <p data-i18n="section2.intro">Lorsque vous effectuez une réservation, nous collectons :</p>
             <ul>
-                <li>Nom et prénom</li>
-                <li>Adresse email</li>
-                <li>Numéro de téléphone</li>
-                <li>Nombre de convives</li>
-                <li>Date et heure de la réservation</li>
+                <li data-i18n="section2.item1">Nom et prénom</li>
+                <li data-i18n="section2.item2">Adresse email</li>
+                <li data-i18n="section2.item3">Numéro de téléphone</li>
+                <li data-i18n="section2.item4">Nombre de convives</li>
+                <li data-i18n="section2.item5">Date et heure de la réservation</li>
             </ul>
         </div>
 
         <!-- Section 3 -->
         <div class="policy-section">
-            <h2>3. Pourquoi collectons-nous ces données ?</h2>
-            <p><strong>Base légale :</strong> Exécution d'un contrat (votre réservation constitue un engagement contractuel)</p>
+            <h2 data-i18n="section3.title">3. Pourquoi collectons-nous ces données ?</h2>
+            <p data-i18n="section3.legal">
+                <strong>Base légale :</strong> Exécution d'un contrat (votre réservation constitue un engagement contractuel)
+            </p>
 
-            <h3>Finalités :</h3>
+            <h3 data-i18n="section3.purposes">Finalités :</h3>
             <ul>
-                <li>Gérer votre réservation (confirmation, modification, annulation)</li>
-                <li>Vous contacter en cas de nécessité (problème en cuisine, fermeture exceptionnelle, clarification)</li>
-                <li>Organiser le service en salle (attribution des tables, préparation)</li>
+                <li data-i18n="section3.item1">Gérer votre réservation (confirmation, modification, annulation)</li>
+                <li data-i18n="section3.item2">Vous contacter en cas de nécessité (problème en cuisine, fermeture exceptionnelle, clarification)</li>
+                <li data-i18n="section3.item3">Organiser le service en salle (attribution des tables, préparation)</li>
             </ul>
 
             <div class="highlight-box">
-                <p>Nous n'utilisons <strong>jamais</strong> les données collectées par notre page de réservation pour du marketing, de la prospection ou de la publicité sans votre consentement explicite séparé.</p>
+                <p data-i18n="section3.highlight">Nous n'utilisons <strong>jamais</strong> les données collectées par notre page de réservation pour du marketing, de la prospection ou de la publicité sans votre consentement explicite séparé.</p>
             </div>
         </div>
 
         <!-- Section 4 -->
         <div class="policy-section">
-            <h2>4. Qui peut accéder à vos données ?</h2>
+            <h2 data-i18n="section4.title">4. Qui peut accéder à vos données ?</h2>
             <ul>
-                <li><strong>Le responsable du restaurant :</strong> accès complet pour la gestion</li>
-                <li><strong>Le personnel de salle habilité :</strong> consultation via une interface sécurisée pour confirmer les réservations et gérer les tables</li>
-                <li><strong>Google LLC :</strong> en tant que sous-traitant technique (hébergement sécurisé des données sur Google Sheets, serveurs européens)</li>
+                <li data-i18n="section4.item1"><strong>Le responsable du restaurant :</strong> accès complet pour la gestion</li>
+                <li data-i18n="section4.item2"><strong>Le personnel de salle habilité :</strong> consultation via une interface sécurisée pour confirmer les réservations et gérer les tables</li>
+                <li data-i18n="section4.item3"><strong>Google LLC :</strong> en tant que sous-traitant technique (hébergement sécurisé des données sur Google Sheets, serveurs européens)</li>
             </ul>
-            <p>Le personnel est formé à la confidentialité et soumis à une obligation de secret professionnel.</p>
+            <p data-i18n="section4.confidentiality">Le personnel est formé à la confidentialité et soumis à une obligation de secret professionnel.</p>
         </div>
     </div>
 
     <footer>
         <p>Piaf • Bruxelles • <a href="tel:+32456668560">+32 456 66 85 60</a></p>
         <div class="footer-links">
-            <a href="index.html">Retour à la réservation</a>
+            <a href="index.html" data-i18n="backToReservation">Retour à la réservation</a>
         </div>
     </footer>
+
+    <script>
+        // ============================================
+        // TRADUCTIONS
+        // ============================================
+
+        const i18n = {
+            fr: {
+                'title': 'Politique de traitement des données',
+                'back': '&#8592; Retour à la réservation',
+                'backToReservation': 'Retour à la réservation',
+                'phone': 'Téléphone',
+                'section1.title': '1. Qui est responsable de vos données ?',
+                'section2.title': '2. Quelles données collectons-nous ?',
+                'section2.intro': 'Lorsque vous effectuez une réservation, nous collectons :',
+                'section2.item1': 'Nom et prénom',
+                'section2.item2': 'Adresse email',
+                'section2.item3': 'Numéro de téléphone',
+                'section2.item4': 'Nombre de convives',
+                'section2.item5': 'Date et heure de la réservation',
+                'section3.title': '3. Pourquoi collectons-nous ces données ?',
+                'section3.legal': '<strong>Base légale :</strong> Exécution d\'un contrat (votre réservation constitue un engagement contractuel)',
+                'section3.purposes': 'Finalités :',
+                'section3.item1': 'Gérer votre réservation (confirmation, modification, annulation)',
+                'section3.item2': 'Vous contacter en cas de nécessité (problème en cuisine, fermeture exceptionnelle, clarification)',
+                'section3.item3': 'Organiser le service en salle (attribution des tables, préparation)',
+                'section3.highlight': 'Nous n\'utilisons <strong>jamais</strong> les données collectées par notre page de réservation pour du marketing, de la prospection ou de la publicité sans votre consentement explicite séparé.',
+                'section4.title': '4. Qui peut accéder à vos données ?',
+                'section4.item1': '<strong>Le responsable du restaurant :</strong> accès complet pour la gestion',
+                'section4.item2': '<strong>Le personnel de salle habilité :</strong> consultation via une interface sécurisée pour confirmer les réservations et gérer les tables',
+                'section4.item3': '<strong>Google LLC :</strong> en tant que sous-traitant technique (hébergement sécurisé des données sur Google Sheets, serveurs européens)',
+                'section4.confidentiality': 'Le personnel est formé à la confidentialité et soumis à une obligation de secret professionnel.'
+            },
+            en: {
+                'title': 'Data Processing Policy',
+                'back': '&#8592; Back to reservation',
+                'backToReservation': 'Back to reservation',
+                'phone': 'Phone',
+                'section1.title': '1. Who is responsible for your data?',
+                'section2.title': '2. What data do we collect?',
+                'section2.intro': 'When you make a reservation, we collect:',
+                'section2.item1': 'First and last name',
+                'section2.item2': 'Email address',
+                'section2.item3': 'Phone number',
+                'section2.item4': 'Number of guests',
+                'section2.item5': 'Date and time of reservation',
+                'section3.title': '3. Why do we collect this data?',
+                'section3.legal': '<strong>Legal basis:</strong> Performance of a contract (your reservation constitutes a contractual commitment)',
+                'section3.purposes': 'Purposes:',
+                'section3.item1': 'Manage your reservation (confirmation, modification, cancellation)',
+                'section3.item2': 'Contact you if necessary (kitchen issues, exceptional closure, clarification)',
+                'section3.item3': 'Organize table service (table assignment, preparation)',
+                'section3.highlight': 'We <strong>never</strong> use data collected through our reservation page for marketing, prospecting, or advertising without your separate explicit consent.',
+                'section4.title': '4. Who can access your data?',
+                'section4.item1': '<strong>The restaurant manager:</strong> full access for management',
+                'section4.item2': '<strong>Authorized floor staff:</strong> consultation via a secure interface to confirm reservations and manage tables',
+                'section4.item3': '<strong>Google LLC:</strong> as a technical subcontractor (secure data hosting on Google Sheets, European servers)',
+                'section4.confidentiality': 'Staff are trained in confidentiality and bound by professional secrecy obligations.'
+            },
+            nl: {
+                'title': 'Gegevensverwerkingsbeleid',
+                'back': '&#8592; Terug naar reservering',
+                'backToReservation': 'Terug naar reservering',
+                'phone': 'Telefoon',
+                'section1.title': '1. Wie is verantwoordelijk voor uw gegevens?',
+                'section2.title': '2. Welke gegevens verzamelen wij?',
+                'section2.intro': 'Wanneer u een reservering maakt, verzamelen wij:',
+                'section2.item1': 'Voor- en achternaam',
+                'section2.item2': 'E-mailadres',
+                'section2.item3': 'Telefoonnummer',
+                'section2.item4': 'Aantal gasten',
+                'section2.item5': 'Datum en tijd van de reservering',
+                'section3.title': '3. Waarom verzamelen wij deze gegevens?',
+                'section3.legal': '<strong>Rechtsgrondslag:</strong> Uitvoering van een contract (uw reservering vormt een contractuele verbintenis)',
+                'section3.purposes': 'Doeleinden:',
+                'section3.item1': 'Uw reservering beheren (bevestiging, wijziging, annulering)',
+                'section3.item2': 'Contact met u opnemen indien nodig (keukenproblemen, uitzonderlijke sluiting, verduidelijking)',
+                'section3.item3': 'De zaalbediening organiseren (tafeltoewijzing, voorbereiding)',
+                'section3.highlight': 'Wij gebruiken <strong>nooit</strong> gegevens die via onze reserveringspagina zijn verzameld voor marketing, prospectie of reclame zonder uw afzonderlijke uitdrukkelijke toestemming.',
+                'section4.title': '4. Wie heeft toegang tot uw gegevens?',
+                'section4.item1': '<strong>De restaurantverantwoordelijke:</strong> volledige toegang voor beheer',
+                'section4.item2': '<strong>Bevoegd zaalpersoneel:</strong> raadpleging via een beveiligde interface om reserveringen te bevestigen en tafels te beheren',
+                'section4.item3': '<strong>Google LLC:</strong> als technische onderaannemer (beveiligde gegevensopslag op Google Sheets, Europese servers)',
+                'section4.confidentiality': 'Het personeel is opgeleid in vertrouwelijkheid en gebonden aan beroepsgeheim.'
+            }
+        };
+
+        // ============================================
+        // ÉTAT
+        // ============================================
+
+        let currentLang = 'fr';
+
+        // ============================================
+        // INITIALISATION
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Récupérer la langue depuis localStorage (partagée avec la page de réservation)
+            const savedLang = localStorage.getItem('piafLang');
+            if (savedLang && ['fr', 'en', 'nl'].includes(savedLang)) {
+                currentLang = savedLang;
+            }
+
+            // Appliquer la langue
+            setLang(currentLang);
+        });
+
+        // ============================================
+        // LANGUE
+        // ============================================
+
+        function setLang(lang) {
+            currentLang = lang;
+
+            // Sauvegarder dans localStorage pour partager avec la page de réservation
+            localStorage.setItem('piafLang', lang);
+
+            // Mettre à jour les boutons de langue
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
+            });
+
+            // Mettre à jour le titre de la page
+            document.title = `Piaf — ${i18n[lang]['title']}`;
+
+            // Mettre à jour l'attribut lang du HTML
+            document.documentElement.lang = lang === 'nl' ? 'nl' : (lang === 'en' ? 'en' : 'fr');
+
+            // Traduire tous les éléments avec data-i18n
+            const t = i18n[lang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                if (t[key]) {
+                    el.innerHTML = t[key];
+                }
+            });
+        }
+    </script>
 </body>
 </html>
