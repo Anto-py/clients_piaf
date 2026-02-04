@@ -2758,29 +2758,60 @@
                 initTimeslotSlider();
             }
 
-            // Obtenir les tables occupées au créneau sélectionné
-            const occupiedTables = getOccupiedTablesAtSelectedTimeslot();
-
             let html = '';
 
-            // Générer les tables
-            TABLES_CONFIG.list.forEach(tableNum => {
-                const capacity = TABLES_CONFIG.capacity[tableNum];
-                const occupiedInfo = occupiedTables.get(tableNum);
-                const isOccupied = !!occupiedInfo;
+            // Si pas de créneau sélectionné (jour fermé ou slider non initialisé),
+            // afficher toutes les réservations confirmées du jour
+            if (!selectedTimeslot) {
+                // Mode sans slider : afficher toutes les tables avec leurs réservations
+                const tableInfo = new Map();
+                state.reservations
+                    .filter(r => r.statut === 'confirmée' && r.tables)
+                    .forEach(r => {
+                        String(r.tables).split(',').forEach(t => {
+                            const tableNum = parseInt(t.trim());
+                            if (!tableInfo.has(tableNum)) {
+                                tableInfo.set(tableNum, []);
+                            }
+                            tableInfo.get(tableNum).push(r);
+                        });
+                    });
 
-                // Déterminer le statut : libre ou occupée (complet)
-                const statusClass = isOccupied ? 'complete' : 'libre';
-                const statusText = isOccupied ? 'Occupée' : 'Libre';
+                TABLES_CONFIG.list.forEach(tableNum => {
+                    const capacity = TABLES_CONFIG.capacity[tableNum];
+                    const reservations = tableInfo.get(tableNum) || [];
+                    const isOccupied = reservations.length > 0;
+                    const statusClass = isOccupied ? 'complete' : 'libre';
+                    const statusText = isOccupied ? 'Occupée' : 'Libre';
 
-                html += `
-                    <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
-                        <span class="table-number">${tableNum}</span>
-                        <span class="table-capacity">${capacity} places</span>
-                        <span class="table-places">${statusText}</span>
-                    </div>
-                `;
-            });
+                    html += `
+                        <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
+                            <span class="table-number">${tableNum}</span>
+                            <span class="table-capacity">${capacity} places</span>
+                            <span class="table-places">${statusText}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                // Mode avec slider : filtrer par créneau horaire
+                const occupiedTables = getOccupiedTablesAtSelectedTimeslot();
+
+                TABLES_CONFIG.list.forEach(tableNum => {
+                    const capacity = TABLES_CONFIG.capacity[tableNum];
+                    const occupiedInfo = occupiedTables.get(tableNum);
+                    const isOccupied = !!occupiedInfo;
+                    const statusClass = isOccupied ? 'complete' : 'libre';
+                    const statusText = isOccupied ? 'Occupée' : 'Libre';
+
+                    html += `
+                        <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
+                            <span class="table-number">${tableNum}</span>
+                            <span class="table-capacity">${capacity} places</span>
+                            <span class="table-places">${statusText}</span>
+                        </div>
+                    `;
+                });
+            }
 
             // Ajouter le separateur entre les tables principales et les tables 1, 2
             html += '<div class="floor-separator"></div>';
