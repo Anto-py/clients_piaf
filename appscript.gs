@@ -21,13 +21,13 @@
 
 const CONFIG = {
   SCHEDULE: {
-    0: { open: true, services: [{ start: '11:00', end: '15:00' }] },
-    1: { open: false },
-    2: { open: false },
-    3: { open: true, services: [{ start: '12:00', end: '14:30' }] },
-    4: { open: true, services: [{ start: '18:30', end: '21:30' }] },
-    5: { open: true, services: [{ start: '18:30', end: '21:30' }] },
-    6: { open: true, services: [{ start: '11:00', end: '15:00' }] }
+    0: { open: true, services: [{ start: '11:00', end: '15:30', slots: ['11:00', '11:30', '12:30', '13:00', '13:30'] }] },  // Dimanche
+    1: { open: false },  // Lundi
+    2: { open: false },  // Mardi
+    3: { open: true, services: [{ start: '12:00', end: '15:00', slots: ['12:00', '12:30', '13:00'] }] },  // Mercredi
+    4: { open: true, services: [{ start: '18:30', end: '22:00', slots: ['18:30', '19:00', '19:30', '20:00'] }] },  // Jeudi
+    5: { open: true, services: [{ start: '18:30', end: '22:30', slots: ['18:30', '19:00', '19:30', '20:00', '20:30'] }] },  // Vendredi
+    6: { open: true, services: [{ start: '12:00', end: '15:30', slots: ['12:00', '12:30', '13:00', '13:30'] }] }  // Samedi
   },
   TABLES: {
     list: [1, 2, 10, 11, 12, 13, 14, 15, 16, 17],
@@ -338,7 +338,7 @@ function getAvailability(dateStr, guests) {
   const slots = [];
   
   schedule.services.forEach(service => {
-    generateTimeSlots(service.start, service.end).forEach(slotTime => {
+    generateTimeSlots(service.start, service.end, service.slots).forEach(slotTime => {
       const isClosed = closures.some(c => isTimeInRange(slotTime, c.start, c.end));
       
       if (!isClosed) {
@@ -355,18 +355,24 @@ function getAvailability(dateStr, guests) {
   return { success: true, date: dateStr, slots };
 }
 
-function generateTimeSlots(startTime, endTime) {
+function generateTimeSlots(startTime, endTime, explicitSlots) {
+  // Si des créneaux explicites sont définis, les utiliser directement
+  if (explicitSlots && explicitSlots.length > 0) {
+    return explicitSlots;
+  }
+
+  // Sinon, générer automatiquement les créneaux
   const slots = [];
   let current = timeToMinutes(startTime);
   const end = timeToMinutes(endTime) - CONFIG.OCCUPATION_DURATION;
-  
+
   while (current <= end) {
     const h = Math.floor(current / 60);
     const m = current % 60;
     slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
     current += CONFIG.SLOT_INTERVAL;
   }
-  
+
   return slots;
 }
 

@@ -953,13 +953,13 @@
 
         // Horaires pour affichage local (fallback)
         const schedule = {
-            0: { open: true, services: [{ label: 'Brunch', start: '11:00', end: '15:00' }] },
-            1: { open: false },
-            2: { open: false },
-            3: { open: true, services: [{ label: 'Midi', start: '12:00', end: '14:30' }] },
-            4: { open: true, services: [{ label: 'Soir', start: '18:30', end: '21:30' }] },
-            5: { open: true, services: [{ label: 'Soir', start: '18:30', end: '21:30' }] },
-            6: { open: true, services: [{ label: 'Brunch', start: '11:00', end: '15:00' }] }
+            0: { open: true, services: [{ label: 'Brunch', start: '11:00', end: '15:30', slots: ['11:00', '11:30', '12:30', '13:00', '13:30'] }] },  // Dimanche
+            1: { open: false },  // Lundi
+            2: { open: false },  // Mardi
+            3: { open: true, services: [{ label: 'Midi', start: '12:00', end: '15:00', slots: ['12:00', '12:30', '13:00'] }] },  // Mercredi
+            4: { open: true, services: [{ label: 'Soir', start: '18:30', end: '22:00', slots: ['18:30', '19:00', '19:30', '20:00'] }] },  // Jeudi
+            5: { open: true, services: [{ label: 'Soir', start: '18:30', end: '22:30', slots: ['18:30', '19:00', '19:30', '20:00', '20:30'] }] },  // Vendredi
+            6: { open: true, services: [{ label: 'Brunch', start: '12:00', end: '15:30', slots: ['12:00', '12:30', '13:00', '13:30'] }] }  // Samedi
         };
 
         // ============================================
@@ -1344,7 +1344,7 @@
                 const grid = document.createElement('div');
                 grid.className = 'time-grid';
                 
-                const slots = generateSlots(service.start, service.end);
+                const slots = generateSlots(service.start, service.end, service.slots);
                 slots.forEach(slot => {
                     const div = document.createElement('div');
                     div.className = 'time-option';
@@ -1358,21 +1358,27 @@
             });
         }
 
-        function generateSlots(start, end) {
+        function generateSlots(start, end, explicitSlots) {
+            // Si des créneaux explicites sont définis, les utiliser directement
+            if (explicitSlots && explicitSlots.length > 0) {
+                return explicitSlots;
+            }
+
+            // Sinon, générer automatiquement les créneaux
             const slots = [];
             const [startH, startM] = start.split(':').map(Number);
             const [endH, endM] = end.split(':').map(Number);
-            
+
             let current = startH * 60 + startM;
             const endMinutes = endH * 60 + endM - 90;
-            
+
             while (current <= endMinutes) {
                 const h = Math.floor(current / 60);
                 const m = current % 60;
                 slots.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
                 current += 15;
             }
-            
+
             return slots;
         }
 
