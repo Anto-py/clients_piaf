@@ -279,6 +279,123 @@
             flex-wrap: wrap;
         }
 
+        /* Slider de créneaux horaires */
+        .timeslot-slider-container {
+            display: none;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+            padding: 1rem;
+            background: var(--gris-fond);
+            border: 1px solid var(--gris-bordure);
+            margin-bottom: 1rem;
+        }
+
+        .timeslot-slider-container.visible {
+            display: flex;
+        }
+
+        .timeslot-slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .timeslot-slider-label {
+            font-size: 0.9rem;
+            color: var(--gris-texte);
+        }
+
+        .timeslot-current {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--bleu-piaf);
+        }
+
+        .timeslot-slider-wrapper {
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .timeslot-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: var(--gris-bordure);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .timeslot-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--bleu-piaf);
+            border-radius: 50%;
+            cursor: grab;
+            box-shadow: 0 2px 6px rgba(42, 53, 147, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .timeslot-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 3px 10px rgba(42, 53, 147, 0.4);
+        }
+
+        .timeslot-slider::-webkit-slider-thumb:active {
+            cursor: grabbing;
+            transform: scale(1.15);
+        }
+
+        .timeslot-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: var(--bleu-piaf);
+            border-radius: 50%;
+            cursor: grab;
+            border: none;
+            box-shadow: 0 2px 6px rgba(42, 53, 147, 0.3);
+        }
+
+        .timeslot-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+        }
+
+        .timeslot-label {
+            font-size: 0.75rem;
+            color: var(--gris-texte);
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .timeslot-label::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 6px;
+            background: var(--gris-bordure);
+        }
+
+        .timeslot-label.active {
+            color: var(--bleu-piaf);
+            font-weight: 500;
+        }
+
+        .timeslot-label.active::before {
+            background: var(--bleu-piaf);
+        }
+
+        /* Ancien système de boutons (maintenu pour compatibilité) */
         .slot-buttons {
             display: none;
             gap: 0.5rem;
@@ -1379,10 +1496,17 @@
             <div class="tables-overview">
                 <h2 class="section-title">Plan des tables</h2>
 
-                <div class="floor-controls">
-                    <div class="slot-buttons" id="slotButtons">
-                        <button class="slot-btn active" data-slot="morning" onclick="selectSlot('morning')">11h - 12h45</button>
-                        <button class="slot-btn" data-slot="afternoon" onclick="selectSlot('afternoon')">13h</button>
+                <!-- Slider de créneaux horaires -->
+                <div class="timeslot-slider-container" id="timeslotSliderContainer">
+                    <div class="timeslot-slider-header">
+                        <span class="timeslot-slider-label">Créneau horaire</span>
+                        <span class="timeslot-current" id="timeslotCurrent">--:--</span>
+                    </div>
+                    <div class="timeslot-slider-wrapper">
+                        <input type="range" class="timeslot-slider" id="timeslotSlider" min="0" max="5" value="0" oninput="onTimeslotSliderChange(this.value)">
+                    </div>
+                    <div class="timeslot-labels" id="timeslotLabels">
+                        <!-- Les labels seront générés par JavaScript -->
                     </div>
                 </div>
 
@@ -2456,7 +2580,7 @@
         }
 
         // ============================================
-        // CONFIGURATION DES TABLES
+        // CONFIGURATION DES TABLES ET HORAIRES
         // ============================================
 
         const TABLES_CONFIG = {
@@ -2464,120 +2588,198 @@
             capacity: { 1: 4, 2: 2, 10: 4, 11: 4, 12: 2, 13: 2, 14: 4, 15: 2, 16: 2, 17: 2 }
         };
 
-        // Creneau selectionne pour le dimanche
-        let selectedSlot = 'morning'; // 'morning' = 11h-12h45, 'afternoon' = 13h
+        // Configuration des horaires (miroir du backend)
+        const SCHEDULE = {
+            0: { open: true, slots: ['11:00', '11:30', '12:30', '13:00', '13:30'] },  // Dimanche
+            1: { open: false, slots: [] },  // Lundi
+            2: { open: false, slots: [] },  // Mardi
+            3: { open: true, slots: ['12:00', '12:30', '13:00'] },  // Mercredi
+            4: { open: true, slots: ['18:30', '19:00', '19:30', '20:00'] },  // Jeudi
+            5: { open: true, slots: ['18:30', '19:00', '19:30', '20:00', '20:30'] },  // Vendredi
+            6: { open: true, slots: ['12:00', '12:30', '13:00', '13:30'] }  // Samedi
+        };
+
+        const OCCUPATION_DURATION = 120; // minutes
+
+        // Créneau horaire actuellement sélectionné (ex: "11:00", "12:30")
+        let selectedTimeslot = null;
+        // Liste des créneaux disponibles pour le jour sélectionné
+        let availableTimeslots = [];
 
         // ============================================
-        // AFFICHAGE DES TABLES
+        // GESTION DU SLIDER DE CRÉNEAUX
         // ============================================
 
         function initFloorPlan() {
-            updateSlotButtonsVisibility();
+            initTimeslotSlider();
         }
 
-        function updateSlotButtonsVisibility() {
+        /**
+         * Initialise le slider de créneaux pour le jour sélectionné
+         */
+        function initTimeslotSlider() {
             const date = new Date(state.selectedDate);
             const dayOfWeek = date.getDay();
-            const slotButtons = document.getElementById('slotButtons');
+            const schedule = SCHEDULE[dayOfWeek];
+            const container = document.getElementById('timeslotSliderContainer');
+            const slider = document.getElementById('timeslotSlider');
+            const labelsContainer = document.getElementById('timeslotLabels');
 
-            // Dimanche = 0
-            if (dayOfWeek === 0) {
-                slotButtons.classList.add('visible');
-            } else {
-                slotButtons.classList.remove('visible');
+            // Si le jour est fermé ou pas de créneaux
+            if (!schedule || !schedule.open || !schedule.slots || schedule.slots.length === 0) {
+                container.classList.remove('visible');
+                availableTimeslots = [];
+                selectedTimeslot = null;
+                return;
             }
+
+            availableTimeslots = schedule.slots;
+            container.classList.add('visible');
+
+            // Configurer le slider
+            slider.min = 0;
+            slider.max = availableTimeslots.length - 1;
+
+            // Générer les labels
+            labelsContainer.innerHTML = availableTimeslots.map((slot, index) =>
+                `<span class="timeslot-label" data-index="${index}">${slot}</span>`
+            ).join('');
+
+            // Déterminer le créneau par défaut (le plus proche de l'heure actuelle ou le premier)
+            const defaultIndex = getDefaultTimeslotIndex();
+            slider.value = defaultIndex;
+            onTimeslotSliderChange(defaultIndex);
         }
 
-        function selectSlot(slot) {
-            selectedSlot = slot;
-            document.querySelectorAll('.slot-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.slot === slot);
+        /**
+         * Retourne l'index du créneau le plus proche de l'heure actuelle
+         * Si hors service, retourne 0 (premier créneau)
+         */
+        function getDefaultTimeslotIndex() {
+            if (availableTimeslots.length === 0) return 0;
+
+            const now = new Date();
+            const selectedDate = new Date(state.selectedDate);
+
+            // Si ce n'est pas aujourd'hui, retourner le premier créneau
+            if (selectedDate.toDateString() !== now.toDateString()) {
+                return 0;
+            }
+
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            // Trouver le créneau le plus proche
+            let closestIndex = 0;
+            let minDiff = Infinity;
+
+            availableTimeslots.forEach((slot, index) => {
+                const slotMinutes = timeToMinutes(slot);
+                const diff = Math.abs(slotMinutes - currentMinutes);
+
+                // Privilégier les créneaux à venir ou en cours
+                if (slotMinutes >= currentMinutes - OCCUPATION_DURATION && diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = index;
+                }
             });
+
+            // Si tous les créneaux sont passés, prendre le dernier
+            const lastSlotMinutes = timeToMinutes(availableTimeslots[availableTimeslots.length - 1]);
+            if (currentMinutes > lastSlotMinutes + OCCUPATION_DURATION) {
+                return availableTimeslots.length - 1;
+            }
+
+            return closestIndex;
+        }
+
+        /**
+         * Appelé quand le slider change de valeur
+         */
+        function onTimeslotSliderChange(value) {
+            const index = parseInt(value);
+            if (index < 0 || index >= availableTimeslots.length) return;
+
+            selectedTimeslot = availableTimeslots[index];
+
+            // Mettre à jour l'affichage du créneau actuel
+            document.getElementById('timeslotCurrent').textContent = selectedTimeslot;
+
+            // Mettre à jour les labels actifs
+            document.querySelectorAll('.timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === index);
+            });
+
+            // Rafraîchir l'affichage des tables
             renderTables();
         }
 
+        /**
+         * Retourne les réservations qui occupent une table au créneau sélectionné
+         * Une réservation occupe une table si le créneau sélectionné tombe dans sa "zone protégée"
+         * Zone protégée = [heure réservation - 2h, heure réservation + 2h]
+         */
         function getReservationsForSlot(reservations) {
-            const date = new Date(state.selectedDate);
-            const dayOfWeek = date.getDay();
-
-            // Si ce n'est pas dimanche, retourner toutes les reservations confirmees
-            if (dayOfWeek !== 0) {
+            // Si pas de créneau sélectionné, retourner toutes les réservations confirmées
+            if (!selectedTimeslot) {
                 return reservations.filter(r => r.statut === 'confirmée');
             }
 
-            // Dimanche: filtrer selon le creneau
+            const slotMinutes = timeToMinutes(selectedTimeslot);
+            const slotEnd = slotMinutes + OCCUPATION_DURATION;
+
             return reservations.filter(r => {
                 if (r.statut !== 'confirmée') return false;
-                const hour = parseInt(r.heure.split(':')[0]);
-                if (selectedSlot === 'morning') {
-                    return hour < 13;
-                } else {
-                    return hour >= 13;
-                }
+
+                const resStart = timeToMinutes(r.heure);
+                const resEnd = resStart + OCCUPATION_DURATION;
+
+                // Zone protégée: de (resStart - OCCUPATION_DURATION) à resEnd
+                const protectedZoneStart = resStart - OCCUPATION_DURATION;
+                const protectedZoneEnd = resEnd;
+
+                // Vérifier si le créneau sélectionné chevauche la zone protégée
+                return (slotMinutes < protectedZoneEnd && slotEnd > protectedZoneStart);
             });
+        }
+
+        /**
+         * Retourne les tables occupées au créneau sélectionné avec leurs réservations
+         */
+        function getOccupiedTablesAtSelectedTimeslot() {
+            if (!selectedTimeslot) {
+                return new Map();
+            }
+            return getOccupiedTablesAtTime(selectedTimeslot, state.reservations);
         }
 
         function renderTables() {
             const container = document.getElementById('floorGrid');
-            updateSlotButtonsVisibility();
 
-            // Filtrer les reservations selon le creneau
-            const slotReservations = getReservationsForSlot(state.reservations);
+            // S'assurer que le slider est initialisé pour ce jour
+            if (availableTimeslots.length === 0 || !selectedTimeslot) {
+                initTimeslotSlider();
+            }
 
-            // Grouper les reservations par table
-            const tableInfo = new Map();
-
-            slotReservations
-                .filter(r => r.tables)
-                .forEach(r => {
-                    String(r.tables).split(',').forEach(t => {
-                        const tableNum = parseInt(t.trim());
-                        if (!tableInfo.has(tableNum)) {
-                            tableInfo.set(tableNum, []);
-                        }
-                        tableInfo.get(tableNum).push(r);
-                    });
-                });
+            // Obtenir les tables occupées au créneau sélectionné
+            const occupiedTables = getOccupiedTablesAtSelectedTimeslot();
 
             let html = '';
 
-            // Generer les tables
+            // Générer les tables
             TABLES_CONFIG.list.forEach(tableNum => {
                 const capacity = TABLES_CONFIG.capacity[tableNum];
-                const reservations = tableInfo.get(tableNum) || [];
+                const occupiedInfo = occupiedTables.get(tableNum);
+                const isOccupied = !!occupiedInfo;
 
-                // Calculer les places occupees
-                let placesOccupees = 0;
-                reservations.forEach(r => {
-                    const tablesUtilisees = String(r.tables).split(',').map(t => parseInt(t.trim()));
-                    // Si la reservation utilise plusieurs tables, repartir les personnes
-                    if (tablesUtilisees.length > 1) {
-                        // Calculer la capacite totale des tables utilisees
-                        const capaciteTotale = tablesUtilisees.reduce((sum, t) => sum + TABLES_CONFIG.capacity[t], 0);
-                        // Proportion pour cette table
-                        placesOccupees += Math.ceil(r.personnes * (capacity / capaciteTotale));
-                    } else {
-                        placesOccupees += parseInt(r.personnes);
-                    }
-                });
-
-                // Ne pas depasser la capacite
-                placesOccupees = Math.min(placesOccupees, capacity);
-                const placesLibres = capacity - placesOccupees;
-
-                // Determiner le statut
-                let statusClass = 'libre';
-                if (placesOccupees >= capacity) {
-                    statusClass = 'complete';
-                } else if (placesOccupees > 0) {
-                    statusClass = 'partielle';
-                }
+                // Déterminer le statut : libre ou occupée (complet)
+                const statusClass = isOccupied ? 'complete' : 'libre';
+                const statusText = isOccupied ? 'Occupée' : 'Libre';
 
                 html += `
                     <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
                         <span class="table-number">${tableNum}</span>
                         <span class="table-capacity">${capacity} places</span>
-                        <span class="table-places">${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}</span>
+                        <span class="table-places">${statusText}</span>
                     </div>
                 `;
             });
@@ -2606,7 +2808,7 @@
             );
 
             if (tableReservations.length === 0) {
-                body.innerHTML = '<p class="no-reservations">Aucune reservation pour cette table.</p>';
+                body.innerHTML = '<p class="no-reservations">Aucune réservation pour cette table à ce créneau.</p>';
             } else {
                 body.innerHTML = `
                     <div class="table-reservations-list">
@@ -2615,7 +2817,8 @@
                                 <div class="table-resa-name">${escapeHtml(r.nom)}</div>
                                 <div class="table-resa-info">
                                     ${r.heure} - ${r.personnes} personne${r.personnes > 1 ? 's' : ''}<br>
-                                    ${r.telephone ? `Tel: ${escapeHtml(r.telephone)}` : ''}
+                                    ${r.telephone ? `Tel: ${escapeHtml(r.telephone)}<br>` : ''}
+                                    ${r.email ? `<div class="email-container">Email: ${escapeHtml(r.email)} <button class="btn-copy-email" onclick="copyToClipboard('${escapeHtml(r.email)}')" title="Copier l'email">📋</button></div>` : ''}
                                 </div>
                                 <button class="move-table-btn" onclick="openMoveTableModal('${r.id}', ${tableNum})">
                                     Changer de table
@@ -2810,6 +3013,7 @@
         function selectDate(dateStr) {
             state.selectedDate = dateStr;
             renderCalendar();
+            initTimeslotSlider(); // Réinitialiser le slider pour le nouveau jour
             loadDashboard();
         }
 
@@ -2839,6 +3043,14 @@
         function copyEmail(email) {
             navigator.clipboard.writeText(email).then(() => {
                 showToast('Email copié !', 'success');
+            }).catch(() => {
+                showToast('Erreur lors de la copie', 'error');
+            });
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copié !', 'success');
             }).catch(() => {
                 showToast('Erreur lors de la copie', 'error');
             });
@@ -3003,6 +3215,7 @@
             state.selectedDate = dateStr;
             updateMobileCalendar();
             renderCalendar();
+            initTimeslotSlider(); // Réinitialiser le slider pour le nouveau jour
             loadDashboard();
             updateMobileDateText();
             closeMobilePanel('mobileCalendarPanel');
