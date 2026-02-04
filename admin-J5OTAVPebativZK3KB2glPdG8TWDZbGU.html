@@ -1721,12 +1721,6 @@
             loadDashboard();
             loadAllPendingReservations();
             loadClosures();
-
-            // Rafraîchir le dashboard et les demandes en attente toutes les 30 secondes
-            setInterval(() => {
-                loadDashboard();
-                loadAllPendingReservations();
-            }, 30000);
         });
 
         // ============================================
