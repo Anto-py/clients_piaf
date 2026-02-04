@@ -1335,7 +1335,7 @@
                 📅 <span id="mobileDateText"></span>
             </button>
             <div class="header-date" id="headerDate"></div>
-            <button class="refresh-btn" id="refreshBtn" onclick="loadDashboard()">↻ Actualiser</button>
+            <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">↻ Actualiser</button>
         </div>
     </header>
 
@@ -1850,6 +1850,16 @@
                     </div>
                 `;
             }
+        }
+
+        /**
+         * Rafraîchit toutes les données (dashboard + demandes en attente)
+         */
+        async function refreshAll() {
+            await Promise.all([
+                loadDashboard(),
+                loadAllPendingReservations()
+            ]);
         }
 
         // ============================================
