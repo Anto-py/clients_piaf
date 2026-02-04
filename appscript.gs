@@ -37,7 +37,7 @@ const CONFIG = {
   },
   OCCUPATION_DURATION: 120, // durée d'occupation en minutes (2 heures)
   MIN_ADVANCE_HOURS: 2,
-  MAX_ADVANCE_DAYS: 10,
+  MAX_ADVANCE_DAYS: 60,  // 60 jours à l'avance (environ 2 mois)
   SLOT_INTERVAL: 15
 };
 
