@@ -1088,6 +1088,13 @@
         // ============================================
         
         document.addEventListener('DOMContentLoaded', () => {
+            // Récupérer la langue sauvegardée depuis localStorage
+            const savedLang = localStorage.getItem('piafLang');
+            if (savedLang && ['fr', 'en', 'nl'].includes(savedLang)) {
+                state.lang = savedLang;
+                setLang(savedLang);
+            }
+
             generateDates();
             setupFormListeners();
             showCookieNotice();
@@ -1586,16 +1593,20 @@
 
         function setLang(lang) {
             state.lang = lang;
+
+            // Sauvegarder dans localStorage pour partager avec la page de politique de données
+            localStorage.setItem('piafLang', lang);
+
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.textContent.toLowerCase() === lang);
             });
-            
+
             const t = i18n[lang];
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.dataset.i18n;
                 if (t[key]) el.innerHTML = t[key];
             });
-            
+
             generateDates();
             updateSummary();
         }
