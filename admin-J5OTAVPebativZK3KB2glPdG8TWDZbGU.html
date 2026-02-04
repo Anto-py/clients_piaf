@@ -2658,20 +2658,11 @@
             const reservation = state.reservations.find(r => r.id === reservationId);
             if (!reservation) return;
 
-            // Trouver les tables libres
-            const slotReservations = getReservationsForSlot(state.reservations);
-            const occupiedTables = new Set();
-
-            slotReservations.forEach(r => {
-                if (r.id !== reservationId && r.tables) {
-                    String(r.tables).split(',').forEach(t => {
-                        occupiedTables.add(parseInt(t.trim()));
-                    });
-                }
-            });
+            // Trouver les tables libres en tenant compte des conflits horaires
+            const occupiedTablesMap = getOccupiedTablesAtTime(reservation.heure, state.reservations, reservationId);
 
             const freeTables = TABLES_CONFIG.list.filter(t =>
-                !occupiedTables.has(t) && TABLES_CONFIG.capacity[t] >= reservation.personnes
+                !occupiedTablesMap.has(t) && TABLES_CONFIG.capacity[t] >= reservation.personnes
             );
 
             if (freeTables.length === 0) {
@@ -2721,7 +2712,7 @@
 
                 if (result.success) {
                     showToast('Reservation deplacee vers la table ' + newTable, 'success');
-                    loadDashboard();
+                    await loadDashboard();
                 } else {
                     showToast('Erreur: ' + (result.error || 'Echec du deplacement'), 'error');
                 }
