@@ -706,6 +706,68 @@
         .modal-btn:hover {
             background: var(--bleu-hover);
         }
+
+        /* Cookie Notice Modal */
+        .cookie-modal-content {
+            background: var(--blanc);
+            padding: 2rem;
+            max-width: 500px;
+            margin: 1rem;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .cookie-modal-content {
+            transform: scale(1);
+        }
+
+        .cookie-modal-content .modal-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .cookie-modal-content .modal-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: var(--bleu-piaf);
+            margin-bottom: 1rem;
+        }
+
+        .cookie-modal-content .modal-text {
+            color: var(--noir);
+            font-size: 0.95rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .cookie-modal-content .modal-text a {
+            color: var(--bleu-piaf);
+            text-decoration: underline;
+        }
+
+        .cookie-modal-content .modal-text a:hover {
+            color: var(--bleu-hover);
+        }
+
+        /* Footer links */
+        .footer-links {
+            margin-top: 0.75rem;
+        }
+
+        .footer-links a {
+            color: var(--gris-texte);
+            font-size: 0.75rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--bleu-piaf);
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -848,6 +910,9 @@
 
     <footer>
         <p>Piaf • Bruxelles • <a href="tel:+32456668560">+32 456 66 85 60</a></p>
+        <div class="footer-links">
+            <a href="politique-donnees.html" data-i18n="footer.dataPolicy">Politique de traitement des données</a>
+        </div>
     </footer>
 
     <script>
@@ -934,7 +999,11 @@
                 'error.fullyBooked': 'Nous sommes désolés mais nous sommes complets pour cette date, nous vous accueillerons avec plaisir à une autre date.',
                 'closed': 'Fermé',
                 'days': ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
-                'months': ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
+                'months': ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'],
+                'cookie.title': 'Pas de cookies ici !',
+                'cookie.text': 'Aucun cookie n\'est utilisé lors de cette réservation. Nos clients ne sont pas des produits ! Nous préparons avec amour de beaux produits pour eux !<br><br>Vous pouvez toutefois nous laisser vos coordonnées pour être tenu(e) au courant de nos activités via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">notre site</a>.',
+                'cookie.btn': 'J\'ai compris',
+                'footer.dataPolicy': 'Politique de traitement des données'
             },
             en: {
                 'hero.title': 'Book a table',
@@ -968,7 +1037,11 @@
                 'error.fullyBooked': 'We are sorry but we are fully booked for this date, we would be happy to welcome you on another date.',
                 'closed': 'Closed',
                 'days': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-                'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+                'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                'cookie.title': 'No cookies here!',
+                'cookie.text': 'No cookies are used during this reservation. Our customers are not products! We prepare beautiful products with love for them!<br><br>However, you can leave us your contact details to stay informed about our activities via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">our website</a>.',
+                'cookie.btn': 'Got it',
+                'footer.dataPolicy': 'Data Processing Policy'
             },
             nl: {
                 'hero.title': 'Reserveer een tafel',
@@ -1002,7 +1075,11 @@
                 'error.fullyBooked': 'Het spijt ons maar we zijn volgeboekt voor deze datum, we verwelkomen u graag op een andere datum.',
                 'closed': 'Gesloten',
                 'days': ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'],
-                'months': ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+                'months': ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+                'cookie.title': 'Geen cookies hier!',
+                'cookie.text': 'Er worden geen cookies gebruikt tijdens deze reservering. Onze klanten zijn geen producten! We bereiden met liefde mooie producten voor hen!<br><br>U kunt ons echter uw contactgegevens achterlaten om op de hoogte te blijven van onze activiteiten via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">onze website</a>.',
+                'cookie.btn': 'Begrepen',
+                'footer.dataPolicy': 'Gegevensverwerkingsbeleid'
             }
         };
 
@@ -1013,6 +1090,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             generateDates();
             setupFormListeners();
+            showCookieNotice();
         });
 
         // ============================================
@@ -1445,6 +1523,42 @@
         }
 
         // ============================================
+        // COOKIE NOTICE MODAL
+        // ============================================
+
+        function showCookieNotice() {
+            // Ne pas afficher si déjà vu dans cette session
+            if (sessionStorage.getItem('cookieNoticeSeen')) return;
+
+            const modal = document.getElementById('cookieNoticeModal');
+            const t = i18n[state.lang];
+
+            // Mettre à jour le texte avec la langue actuelle
+            const titleEl = modal.querySelector('.modal-title');
+            const textEl = modal.querySelector('.modal-text');
+            const btnEl = modal.querySelector('.modal-btn');
+
+            titleEl.innerHTML = t['cookie.title'];
+            textEl.innerHTML = t['cookie.text'];
+            btnEl.textContent = t['cookie.btn'];
+
+            modal.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCookieNotice(event) {
+            // Si appelé depuis l'overlay, vérifier que le clic est sur l'overlay
+            if (event && event.target !== event.currentTarget) return;
+
+            const modal = document.getElementById('cookieNoticeModal');
+            modal.classList.remove('visible');
+            document.body.style.overflow = '';
+
+            // Marquer comme vu pour cette session
+            sessionStorage.setItem('cookieNoticeSeen', 'true');
+        }
+
+        // ============================================
         // UI
         // ============================================
         
@@ -1493,6 +1607,19 @@
             <div class="modal-icon">📅</div>
             <h3 class="modal-title" data-i18n="error.fullyBooked"></h3>
             <button class="modal-btn" onclick="closeFullyBookedModal()">OK</button>
+        </div>
+    </div>
+
+    <!-- Cookie Notice Modal -->
+    <div id="cookieNoticeModal" class="modal-overlay" onclick="closeCookieNotice(event)">
+        <div class="cookie-modal-content" onclick="event.stopPropagation()">
+            <div class="modal-icon">🍪</div>
+            <h3 class="modal-title" data-i18n="cookie.title">Pas de cookies ici !</h3>
+            <p class="modal-text" data-i18n="cookie.text">
+                Aucun cookie n'est utilisé lors de cette réservation. Nos clients ne sont pas des produits ! Nous préparons avec amour de beaux produits pour eux !<br><br>
+                Vous pouvez toutefois nous laisser vos coordonnées pour être tenu(e) au courant de nos activités via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">notre site</a>.
+            </p>
+            <button class="modal-btn" onclick="closeCookieNotice()">J'ai compris</button>
         </div>
     </div>
 </body>
