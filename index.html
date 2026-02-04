@@ -636,6 +636,76 @@
         .hidden {
             display: none !important;
         }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background: var(--blanc);
+            padding: 2rem;
+            max-width: 400px;
+            margin: 1rem;
+            text-align: center;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 400;
+            color: var(--bleu-piaf);
+            margin-bottom: 1rem;
+        }
+
+        .modal-text {
+            color: var(--gris-texte);
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-btn {
+            background: var(--bleu-piaf);
+            color: var(--blanc);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            background: var(--bleu-hover);
+        }
     </style>
 </head>
 <body>
@@ -861,6 +931,7 @@
                 'loading': 'Chargement des disponibilités...',
                 'error.generic': 'Une erreur est survenue. Veuillez réessayer.',
                 'error.slotUnavailable': 'Ce créneau n\'est plus disponible. Veuillez en choisir un autre.',
+                'error.fullyBooked': 'Nous sommes désolés mais nous sommes complets pour cette date, nous vous accueillerons avec plaisir à une autre date.',
                 'closed': 'Fermé',
                 'days': ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
                 'months': ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
@@ -894,6 +965,7 @@
                 'loading': 'Loading availability...',
                 'error.generic': 'An error occurred. Please try again.',
                 'error.slotUnavailable': 'This slot is no longer available. Please choose another one.',
+                'error.fullyBooked': 'We are sorry but we are fully booked for this date, we would be happy to welcome you on another date.',
                 'closed': 'Closed',
                 'days': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
                 'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -927,6 +999,7 @@
                 'loading': 'Beschikbaarheid laden...',
                 'error.generic': 'Er is een fout opgetreden. Probeer het opnieuw.',
                 'error.slotUnavailable': 'Dit tijdslot is niet meer beschikbaar. Kies een ander.',
+                'error.fullyBooked': 'Het spijt ons maar we zijn volgeboekt voor deze datum, we verwelkomen u graag op een andere datum.',
                 'closed': 'Gesloten',
                 'days': ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'],
                 'months': ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
@@ -1095,12 +1168,17 @@
             
             if (availability && availability.success && availability.slots) {
                 state.availableSlots = availability.slots;
-                renderTimeSlots(parseInt(el.dataset.day));
+                const hasAvailableSlots = renderTimeSlots(parseInt(el.dataset.day));
+
+                // Afficher le pop-up si aucun créneau n'est disponible
+                if (!hasAvailableSlots) {
+                    showFullyBookedModal();
+                }
             } else {
                 // Fallback: afficher les créneaux sans vérification en temps réel
                 renderTimeSlotsOffline(parseInt(el.dataset.day));
             }
-            
+
             updateSummary();
             updateSteps(2);
         }
@@ -1112,22 +1190,23 @@
         function renderTimeSlots(dayOfWeek) {
             const container = document.getElementById('timeSlotsContent');
             container.innerHTML = '';
-            
+
             const daySchedule = schedule[dayOfWeek];
-            if (!daySchedule.open) return;
-            
+            if (!daySchedule.open) return false;
+
             const t = i18n[state.lang];
-            
+            let hasAvailableSlots = false;
+
             // Grouper les slots par service
             daySchedule.services.forEach(service => {
                 const label = document.createElement('div');
                 label.className = 'service-label';
                 label.textContent = service.label;
                 container.appendChild(label);
-                
+
                 const grid = document.createElement('div');
                 grid.className = 'time-grid';
-                
+
                 // Filtrer les slots disponibles pour ce service
                 const serviceSlots = state.availableSlots.filter(slot => {
                     const slotMinutes = timeToMinutes(slot.time);
@@ -1135,7 +1214,7 @@
                     const endMinutes = timeToMinutes(service.end);
                     return slotMinutes >= startMinutes && slotMinutes < endMinutes;
                 });
-                
+
                 if (serviceSlots.length === 0) {
                     const noSlots = document.createElement('p');
                     noSlots.style.color = 'var(--gris)';
@@ -1143,22 +1222,25 @@
                     container.appendChild(noSlots);
                     return;
                 }
-                
+
                 serviceSlots.forEach(slot => {
                     const div = document.createElement('div');
                     div.className = `time-option ${!slot.available ? 'disabled' : ''}`;
                     div.textContent = slot.time;
                     div.dataset.time = slot.time;
-                    
+
                     if (slot.available) {
+                        hasAvailableSlots = true;
                         div.onclick = () => selectTime(div);
                     }
-                    
+
                     grid.appendChild(div);
                 });
-                
+
                 container.appendChild(grid);
             });
+
+            return hasAvailableSlots;
         }
 
         function renderTimeSlotsOffline(dayOfWeek) {
@@ -1250,10 +1332,15 @@
                         state.availableSlots = availability.slots;
                         const selectedDate = document.querySelector('.date-option.selected');
                         if (selectedDate) {
-                            renderTimeSlots(parseInt(selectedDate.dataset.day));
+                            const hasAvailableSlots = renderTimeSlots(parseInt(selectedDate.dataset.day));
+
+                            // Afficher le pop-up si aucun créneau n'est disponible
+                            if (!hasAvailableSlots) {
+                                showFullyBookedModal();
+                            }
                         }
                     }
-                    
+
                     validateForm();
                 }
             }
@@ -1333,6 +1420,31 @@
         }
 
         // ============================================
+        // MODAL COMPLET
+        // ============================================
+
+        function showFullyBookedModal() {
+            const modal = document.getElementById('fullyBookedModal');
+            const t = i18n[state.lang];
+
+            // Mettre à jour le texte du modal avec la langue actuelle
+            const titleEl = modal.querySelector('.modal-title');
+            titleEl.textContent = t['error.fullyBooked'];
+
+            modal.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeFullyBookedModal(event) {
+            // Si appelé depuis l'overlay, vérifier que le clic est sur l'overlay
+            if (event && event.target !== event.currentTarget) return;
+
+            const modal = document.getElementById('fullyBookedModal');
+            modal.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
+        // ============================================
         // UI
         // ============================================
         
@@ -1374,5 +1486,14 @@
             updateSummary();
         }
     </script>
+
+    <!-- Modal complet -->
+    <div id="fullyBookedModal" class="modal-overlay" onclick="closeFullyBookedModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-icon">📅</div>
+            <h3 class="modal-title" data-i18n="error.fullyBooked"></h3>
+            <button class="modal-btn" onclick="closeFullyBookedModal()">OK</button>
+        </div>
+    </div>
 </body>
 </html>
