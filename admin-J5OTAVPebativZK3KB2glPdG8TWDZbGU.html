@@ -2756,6 +2756,9 @@
             // S'assurer que le slider est initialisé pour ce jour
             if (availableTimeslots.length === 0 || !selectedTimeslot) {
                 initTimeslotSlider();
+                // Si initTimeslotSlider a défini selectedTimeslot, il a déjà appelé renderTables()
+                // donc on peut sortir ici pour éviter un double rendu
+                if (selectedTimeslot) return;
             }
 
             // Récupérer les réservations à afficher selon le mode
