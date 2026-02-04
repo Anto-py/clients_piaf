@@ -2003,20 +2003,21 @@
             // Générer le sélecteur de tables
             const selector = document.getElementById('tableSelector');
             let html = '';
-            
-            for (let i = 1; i <= 8; i++) {
-                const occupied = occupiedTables.get(i);
+
+            for (const tableNum of TABLES_CONFIG.list) {
+                const occupied = occupiedTables.get(tableNum);
                 const isUnavailable = !!occupied;
-                
+                const capacity = TABLES_CONFIG.capacity[tableNum] || 2;
+
                 html += `
-                    <div class="table-select-item ${isUnavailable ? 'unavailable' : ''}" 
-                         data-table="${i}"
-                         onclick="${isUnavailable ? '' : `toggleTable(${i})`}">
-                        <span class="table-number">${i}</span>
+                    <div class="table-select-item ${isUnavailable ? 'unavailable' : ''}"
+                         data-table="${tableNum}"
+                         onclick="${isUnavailable ? '' : `toggleTable(${tableNum})`}">
+                        <span class="table-number">${tableNum}</span>
                         <span class="table-info">
-                            ${isUnavailable 
-                                ? `${occupied.reservation.nom}<br>${occupied.start}` 
-                                : '4 places'}
+                            ${isUnavailable
+                                ? `${occupied.reservation.nom}<br>${occupied.start}`
+                                : `${capacity} places`}
                         </span>
                     </div>
                 `;
