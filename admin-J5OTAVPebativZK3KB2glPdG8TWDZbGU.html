@@ -1801,7 +1801,7 @@
         
         const API_URL = 'https://script.google.com/macros/s/AKfycbwt6iMwO9N2SLr91E5udcbMHzZ5_uCUxW7x7MqmO0FGyLKS07fsF_2CCnLeKwVxjA41/exec';
         const ADMIN_SECRET = 'J5OTAVPebativZK3KB2glPdG8TWDZbGU';
-        const OCCUPATION_DURATION = 90; // minutes
+        const OCCUPATION_DURATION = 120; // minutes (2 heures, comme dans le backend)
         
         // ============================================
         // ÉTAT
@@ -2758,60 +2758,63 @@
                 initTimeslotSlider();
             }
 
+            // Récupérer les réservations à afficher selon le mode
+            const slotReservations = getReservationsForSlot(state.reservations);
+
+            // Grouper les réservations par table
+            const tableInfo = new Map();
+            slotReservations
+                .filter(r => r.tables)
+                .forEach(r => {
+                    String(r.tables).split(',').forEach(t => {
+                        const tableNum = parseInt(t.trim());
+                        if (!tableInfo.has(tableNum)) {
+                            tableInfo.set(tableNum, []);
+                        }
+                        tableInfo.get(tableNum).push(r);
+                    });
+                });
+
             let html = '';
 
-            // Si pas de créneau sélectionné (jour fermé ou slider non initialisé),
-            // afficher toutes les réservations confirmées du jour
-            if (!selectedTimeslot) {
-                // Mode sans slider : afficher toutes les tables avec leurs réservations
-                const tableInfo = new Map();
-                state.reservations
-                    .filter(r => r.statut === 'confirmée' && r.tables)
-                    .forEach(r => {
-                        String(r.tables).split(',').forEach(t => {
-                            const tableNum = parseInt(t.trim());
-                            if (!tableInfo.has(tableNum)) {
-                                tableInfo.set(tableNum, []);
-                            }
-                            tableInfo.get(tableNum).push(r);
-                        });
-                    });
+            // Générer les tables
+            TABLES_CONFIG.list.forEach(tableNum => {
+                const capacity = TABLES_CONFIG.capacity[tableNum];
+                const reservations = tableInfo.get(tableNum) || [];
 
-                TABLES_CONFIG.list.forEach(tableNum => {
-                    const capacity = TABLES_CONFIG.capacity[tableNum];
-                    const reservations = tableInfo.get(tableNum) || [];
-                    const isOccupied = reservations.length > 0;
-                    const statusClass = isOccupied ? 'complete' : 'libre';
-                    const statusText = isOccupied ? 'Occupée' : 'Libre';
-
-                    html += `
-                        <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
-                            <span class="table-number">${tableNum}</span>
-                            <span class="table-capacity">${capacity} places</span>
-                            <span class="table-places">${statusText}</span>
-                        </div>
-                    `;
+                // Calculer les places occupées
+                let placesOccupees = 0;
+                reservations.forEach(r => {
+                    const tablesUtilisees = String(r.tables).split(',').map(t => parseInt(t.trim()));
+                    // Si la réservation utilise plusieurs tables, répartir les personnes
+                    if (tablesUtilisees.length > 1) {
+                        const capaciteTotale = tablesUtilisees.reduce((sum, t) => sum + TABLES_CONFIG.capacity[t], 0);
+                        placesOccupees += Math.ceil(r.personnes * (capacity / capaciteTotale));
+                    } else {
+                        placesOccupees += parseInt(r.personnes);
+                    }
                 });
-            } else {
-                // Mode avec slider : filtrer par créneau horaire
-                const occupiedTables = getOccupiedTablesAtSelectedTimeslot();
 
-                TABLES_CONFIG.list.forEach(tableNum => {
-                    const capacity = TABLES_CONFIG.capacity[tableNum];
-                    const occupiedInfo = occupiedTables.get(tableNum);
-                    const isOccupied = !!occupiedInfo;
-                    const statusClass = isOccupied ? 'complete' : 'libre';
-                    const statusText = isOccupied ? 'Occupée' : 'Libre';
+                // Ne pas dépasser la capacité
+                placesOccupees = Math.min(placesOccupees, capacity);
+                const placesLibres = capacity - placesOccupees;
 
-                    html += `
-                        <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
-                            <span class="table-number">${tableNum}</span>
-                            <span class="table-capacity">${capacity} places</span>
-                            <span class="table-places">${statusText}</span>
-                        </div>
-                    `;
-                });
-            }
+                // Déterminer le statut
+                let statusClass = 'libre';
+                if (placesOccupees >= capacity) {
+                    statusClass = 'complete';
+                } else if (placesOccupees > 0) {
+                    statusClass = 'partielle';
+                }
+
+                html += `
+                    <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
+                        <span class="table-number">${tableNum}</span>
+                        <span class="table-capacity">${capacity} places</span>
+                        <span class="table-places">${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}</span>
+                    </div>
+                `;
+            });
 
             // Ajouter le separateur entre les tables principales et les tables 1, 2
             html += '<div class="floor-separator"></div>';
