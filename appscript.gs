@@ -10,7 +10,7 @@
  * - API de nettoyage manuel et gestion des triggers
  *
  * HISTORIQUE v4:
- * - Contrainte 1h30 AVANT une réservation existante
+ * - Contrainte 2h AVANT et APRÈS une réservation existante
  * - Ajout manuel de réservation (admin)
  * - Suppression de réservation (admin)
  */
@@ -323,7 +323,7 @@ function checkAdminAccess(secret) {
 }
 
 // ============================================
-// DISPONIBILITÉS (MODIFIÉ: contrainte 1h30 avant)
+// DISPONIBILITÉS (contrainte 2h avant et après)
 // ============================================
 
 function getAvailability(dateStr, guests) {
@@ -377,11 +377,12 @@ function generateTimeSlots(startTime, endTime, explicitSlots) {
 }
 
 /**
- * MODIFIÉ: Vérifie la disponibilité des tables pour un créneau
+ * Vérifie la disponibilité des tables pour un créneau
  * Prend en compte:
  * - Les chevauchements classiques (une réservation en cours)
- * - La contrainte "1h30 avant" : si une table est réservée à 14h00, 
- *   on ne peut pas la réserver à partir de 12h30 (car 12h30 + 1h30 = 14h00)
+ * - La contrainte "2h avant et après" : si une table est réservée à 14h00,
+ *   on ne peut pas la réserver entre 12h00 et 16h00 (2h avant à 2h après)
+ * - Inclut les réservations "en attente" et "confirmées" (exclut "refusée")
  */
 function getAvailableTablesForSlot(dateStr, slotTime, reservations, guests) {
   const occupiedTables = new Set();
@@ -394,31 +395,10 @@ function getAvailableTablesForSlot(dateStr, slotTime, reservations, guests) {
     const resStart = timeToMinutes(res.heure);
     const resEnd = resStart + CONFIG.OCCUPATION_DURATION;
     
-    // Vérification 1: Chevauchement classique
-    // La nouvelle réservation chevauche une existante
-    const hasOverlap = (slotMinutes < resEnd && slotEnd > resStart);
-    
-    // Vérification 2: Contrainte "1h30 avant"
-    // Si la nouvelle réservation se termine APRÈS le début d'une existante
-    // mais qu'il n'y a pas 1h30 de marge, c'est bloqué
-    // En fait, c'est équivalent à: slotEnd > resStart - 0 (déjà couvert par overlap)
-    // 
-    // La vraie contrainte: si on réserve AVANT une réservation existante,
-    // il faut que notre fin soit au moins 1h30 avant le début de l'existante
-    // Donc: slotEnd <= resStart - 90 OU slotMinutes >= resEnd
-    // 
-    // Reformulé: une table est indisponible si:
-    // - Chevauchement direct: slotMinutes < resEnd ET slotEnd > resStart
-    // - Pas assez de marge avant: slotEnd > resStart ET slotEnd <= resStart + 90 (pas de marge)
-    //   En fait non, la contrainte est: slotEnd > (resStart - 90) ET slotEnd <= resStart
-    //   Ce qui signifie: on finit moins de 90 min avant le début de la résa existante
-    
-    // Simplifions: une table est OCCUPÉE pour ce créneau si:
-    // Le créneau demandé interfère avec la "zone protégée" de la réservation existante
-    // Zone protégée = de (resStart - OCCUPATION_DURATION) à resEnd
-    // Car si quelqu'un réserve à resStart, personne ne peut réserver 
-    // dans les 90 min précédentes sur cette table
-    
+    // Zone protégée : 2h avant et 2h après l'heure de réservation
+    // Exemple: réservation à 14h00 → zone protégée de 12h00 à 16h00
+    // protectedZoneStart = 14h00 - 2h = 12h00
+    // protectedZoneEnd = 14h00 + 2h = 16h00
     const protectedZoneStart = resStart - CONFIG.OCCUPATION_DURATION;
     const protectedZoneEnd = resEnd;
     
