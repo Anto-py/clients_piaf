@@ -2453,19 +2453,20 @@
         /**
          * Calcule l'occupation de chaque table à une heure donnée
          * Retourne une Map: tableNum -> { placesOccupees, reservations }
+         * Utilise la même logique que getReservationsForSlot() pour la cohérence
          */
         function calculateTableOccupancy(timeStr, reservations) {
             const tableOccupancy = new Map();
             const slotMinutes = timeToMinutes(timeStr);
-            const slotEnd = slotMinutes + OCCUPATION_DURATION;
 
-            // Filtrer les réservations confirmées qui chevauchent le créneau
+            // Filtrer les réservations confirmées EN COURS au créneau sélectionné
+            // (même logique que getReservationsForSlot dans renderTables)
             const relevantReservations = reservations.filter(r => {
-                if (r.statut !== 'confirmée' || !r.tables) return false;
+                if (r.statut !== 'confirmée' || !r.tables || !r.heure) return false;
                 const resStart = timeToMinutes(r.heure);
                 const resEnd = resStart + OCCUPATION_DURATION;
-                const protectedZoneStart = resStart - OCCUPATION_DURATION;
-                return slotMinutes < resEnd && slotEnd > protectedZoneStart;
+                // Le créneau est-il pendant l'occupation de cette réservation ?
+                return (slotMinutes >= resStart && slotMinutes < resEnd);
             });
 
             // Grouper par table et calculer les places occupées
