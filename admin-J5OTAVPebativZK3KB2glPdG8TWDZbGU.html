@@ -1919,8 +1919,13 @@
             </div>
             
             <div class="form-group" style="margin-top: 1rem;">
-                <label>Commentaire (optionnel)</label>
-                <input type="text" id="manualComment" placeholder="Ex: Anniversaire, chaise bébé...">
+                <label>Remarque du client (optionnel)</label>
+                <input type="text" id="manualRemarque" placeholder="Ex: Anniversaire, allergie, chaise bébé...">
+            </div>
+
+            <div class="form-group">
+                <label>Commentaire interne (optionnel)</label>
+                <input type="text" id="manualComment" placeholder="Note interne pour l'équipe...">
             </div>
             
             <div class="modal-actions">
@@ -1963,6 +1968,24 @@
             <div class="modal-actions">
                 <button class="btn btn-cancel" onclick="closeModal('editGuestsModal')">Annuler</button>
                 <button class="btn btn-confirm" onclick="confirmEditGuests()">Valider</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Modifier la remarque -->
+    <div class="modal-overlay" id="editRemarqueModal">
+        <div class="modal">
+            <h2 class="modal-title">Modifier la remarque</h2>
+            <p class="modal-subtitle" id="editRemarqueModalSubtitle"></p>
+
+            <div class="form-group">
+                <label>Remarque du client</label>
+                <textarea id="editRemarqueInput" rows="3" placeholder="Ex: Anniversaire, allergie, chaise bébé..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editRemarqueModal')">Annuler</button>
+                <button class="btn btn-confirm" onclick="confirmEditRemarque()">Valider</button>
             </div>
         </div>
     </div>
@@ -2430,6 +2453,7 @@
             document.getElementById('manualPhone').value = '';
             document.getElementById('manualEmail').value = '';
             document.getElementById('manualComment').value = '';
+            document.getElementById('manualRemarque').value = '';
 
             // Cacher l'alerte de conflit
             document.getElementById('manualConflictAlert').classList.remove('visible');
@@ -2704,6 +2728,7 @@
             const name = document.getElementById('manualName').value.trim();
             const phone = document.getElementById('manualPhone').value.trim();
             const email = document.getElementById('manualEmail').value.trim();
+            const remarque = document.getElementById('manualRemarque').value.trim();
             const comment = document.getElementById('manualComment').value.trim();
             const tables = Array.from(state.manualSelectedTables).sort((a, b) => a - b).join(', ');
 
@@ -2742,6 +2767,7 @@
                 email,
                 tables,
                 comment,
+                remarque,
                 status: 'confirmée'
             });
             
@@ -2823,9 +2849,41 @@
         }
 
         // ============================================
+        // MODIFIER LA REMARQUE
+        // ============================================
+
+        let pendingEditRemarqueId = null;
+
+        function openEditRemarqueModal(id, name, currentRemarque) {
+            pendingEditRemarqueId = id;
+            document.getElementById('editRemarqueModalSubtitle').textContent =
+                `Réservation de ${name}`;
+            document.getElementById('editRemarqueInput').value = currentRemarque;
+            document.getElementById('editRemarqueModal').classList.add('active');
+        }
+
+        async function confirmEditRemarque() {
+            const newRemarque = document.getElementById('editRemarqueInput').value.trim();
+
+            const result = await apiCall('updateRemarque', {
+                id: pendingEditRemarqueId
+            }, { remarque: newRemarque });
+
+            closeModal('editRemarqueModal');
+
+            if (result.success) {
+                showToast('Remarque mise à jour', 'success');
+                loadDashboard();
+                loadAllPendingReservations();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
         // RÉSERVATIONS
         // ============================================
-        
+
         function renderPendingList() {
             const container = document.getElementById('pendingList');
             const pending = state.allPendingReservations;
@@ -2893,6 +2951,7 @@
                         ${r.email ? `<span class="email-container">✉️ ${escapeHtml(r.email)} <button class="btn-copy-email" onclick="event.stopPropagation(); copyEmail('${r.email}')" title="Copier l'email">📋</button></span>` : ''}
                     </div>
                     ${r.tables ? `<div class="reservation-tables">🪑 Tables : ${r.tables}</div>` : ''}
+                    ${r.remarque ? `<div style="font-size: 0.8rem; color: var(--bleu-piaf); margin-bottom: 0.5rem; cursor: pointer;" onclick="event.stopPropagation(); openEditRemarqueModal('${r.id}', '${escapedName}', '${escapeHtml(r.remarque).replace(/'/g, "\\'")}')">📝 ${escapeHtml(r.remarque)} ✎</div>` : `<div style="font-size: 0.75rem; color: var(--gris-texte); margin-bottom: 0.5rem; cursor: pointer; font-style: italic;" onclick="event.stopPropagation(); openEditRemarqueModal('${r.id}', '${escapedName}', '')">📝 Ajouter une remarque</div>`}
                     ${r.commentaire ? `<div style="font-size: 0.8rem; color: var(--gris); font-style: italic; margin-bottom: 0.5rem;">💬 ${escapeHtml(r.commentaire)}</div>` : ''}
                     <div class="reservation-actions">
                         ${showActions ? `

@@ -868,6 +868,11 @@
                 <label data-i18n="contact.email">Email <span class="required">*</span></label>
                 <input type="email" class="form-input" id="clientEmail" placeholder="marie@exemple.be">
             </div>
+
+            <div class="form-group">
+                <label data-i18n="contact.remarque">Remarque (optionnel)</label>
+                <textarea class="form-input" id="clientRemarque" rows="2" placeholder="Ex: Anniversaire, allergie, chaise bébé..." style="resize: vertical;"></textarea>
+            </div>
         </div>
 
         <!-- Récapitulatif -->
@@ -941,6 +946,7 @@
             name: '',
             phone: '',
             email: '',
+            remarque: '',
             lang: 'fr',
             availableSlots: [],
             dateOffset: 0  // Offset pour la navigation des dates (en nombre de pages de 10 jours)
@@ -983,6 +989,8 @@
                 'contact.name': 'Nom ou prénom <span class="required">*</span>',
                 'contact.phone': 'Téléphone <span class="required">*</span>',
                 'contact.email': 'Email <span class="required">*</span>',
+                'contact.remarque': 'Remarque (optionnel)',
+                'contact.remarquePlaceholder': 'Ex: Anniversaire, allergie, chaise bébé...',
                 'summary.title': 'Récapitulatif',
                 'summary.date': 'Date',
                 'summary.time': 'Heure',
@@ -1021,6 +1029,8 @@
                 'contact.name': 'Name <span class="required">*</span>',
                 'contact.phone': 'Phone <span class="required">*</span>',
                 'contact.email': 'Email <span class="required">*</span>',
+                'contact.remarque': 'Note (optional)',
+                'contact.remarquePlaceholder': 'E.g.: Birthday, allergy, baby chair...',
                 'summary.title': 'Summary',
                 'summary.date': 'Date',
                 'summary.time': 'Time',
@@ -1059,6 +1069,8 @@
                 'contact.name': 'Naam <span class="required">*</span>',
                 'contact.phone': 'Telefoon <span class="required">*</span>',
                 'contact.email': 'Email <span class="required">*</span>',
+                'contact.remarque': 'Opmerking (optioneel)',
+                'contact.remarquePlaceholder': 'Bijv.: Verjaardag, allergie, kinderstoel...',
                 'summary.title': 'Samenvatting',
                 'summary.date': 'Datum',
                 'summary.time': 'Tijd',
@@ -1450,6 +1462,9 @@
                     validateForm();
                 });
             });
+            document.getElementById('clientRemarque').addEventListener('input', (e) => {
+                state.remarque = e.target.value;
+            });
         }
 
         function validateForm() {
@@ -1481,7 +1496,8 @@
                 name: state.name,
                 phone: state.phone,
                 email: state.email,
-                lang: state.lang
+                lang: state.lang,
+                remarque: state.remarque
             });
             
             if (result.success) {
@@ -1614,6 +1630,12 @@
                 const key = el.dataset.i18n;
                 if (t[key]) el.innerHTML = t[key];
             });
+
+            // Mettre à jour le placeholder du champ remarque
+            const remarqueEl = document.getElementById('clientRemarque');
+            if (remarqueEl && t['contact.remarquePlaceholder']) {
+                remarqueEl.placeholder = t['contact.remarquePlaceholder'];
+            }
 
             generateDates();
             updateSummary();
