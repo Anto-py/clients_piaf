@@ -1824,21 +1824,6 @@
                 <input type="date" id="manualDate">
             </div>
 
-            <!-- Slider d'heures (comme dans le plan principal) -->
-            <div class="timeslot-slider-container" id="manualTimeslotSliderContainer">
-                <div class="timeslot-slider-header">
-                    <span class="timeslot-slider-label">Créneau horaire</span>
-                    <span class="timeslot-current" id="manualTimeslotCurrent">--:--</span>
-                </div>
-                <div class="timeslot-slider-wrapper">
-                    <input type="range" class="timeslot-slider" id="manualTimeslotSlider"
-                           min="0" max="5" value="0" oninput="onManualTimeslotSliderChange(this.value)">
-                </div>
-                <div class="timeslot-labels" id="manualTimeslotLabels">
-                    <!-- Les labels seront générés par JavaScript -->
-                </div>
-            </div>
-
             <div class="form-group">
                 <label>Nombre de personnes *</label>
                 <input type="number" id="manualGuests" min="1" max="32" value="2">
@@ -1859,7 +1844,22 @@
                     <input type="email" id="manualEmail" placeholder="client@exemple.be">
                 </div>
             </div>
-            
+
+            <!-- Slider d'heures (comme dans le plan principal) -->
+            <div class="timeslot-slider-container" id="manualTimeslotSliderContainer">
+                <div class="timeslot-slider-header">
+                    <span class="timeslot-slider-label">Créneau horaire</span>
+                    <span class="timeslot-current" id="manualTimeslotCurrent">--:--</span>
+                </div>
+                <div class="timeslot-slider-wrapper">
+                    <input type="range" class="timeslot-slider" id="manualTimeslotSlider"
+                           min="0" max="5" value="0" oninput="onManualTimeslotSliderChange(this.value)">
+                </div>
+                <div class="timeslot-labels" id="manualTimeslotLabels">
+                    <!-- Les labels seront générés par JavaScript -->
+                </div>
+            </div>
+
             <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
                 Plan des tables :
             </label>
