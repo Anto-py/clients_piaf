@@ -2083,7 +2083,17 @@
         
         function timeToMinutes(time) {
             if (!time) return 0;
-            const [h, m] = String(time).split(':').map(Number);
+            const timeStr = String(time);
+
+            // Gérer le format ISO (ex: "1899-12-30T18:30:00.000Z" ou "2024-01-15T18:30:00")
+            if (timeStr.includes('T')) {
+                const timePart = timeStr.split('T')[1]; // "18:30:00.000Z" ou "18:30:00"
+                const [h, m] = timePart.split(':').map(Number);
+                return h * 60 + m;
+            }
+
+            // Format simple "HH:MM"
+            const [h, m] = timeStr.split(':').map(Number);
             return h * 60 + m;
         }
         
@@ -2765,12 +2775,16 @@
 
         function renderTables() {
             const container = document.getElementById('floorGrid');
+            if (!container) return;
+
+            console.log('🎨 renderTables() appelé - selectedTimeslot:', selectedTimeslot, '- reservations:', state.reservations?.length);
 
             // S'assurer que le slider est initialisé pour ce jour
+            // Note: initTimeslotSlider() peut appeler renderTables() récursivement si skipRender=false
             if (availableTimeslots.length === 0 || !selectedTimeslot) {
                 initTimeslotSlider();
-                // Si initTimeslotSlider a défini selectedTimeslot, il a déjà appelé renderTables()
-                // donc on peut sortir ici pour éviter un double rendu
+                // Si initTimeslotSlider a défini selectedTimeslot et a appelé renderTables(),
+                // on sort pour éviter un double rendu
                 if (selectedTimeslot) return;
             }
 
@@ -2836,6 +2850,7 @@
             html += '<div class="floor-separator"></div>';
 
             container.innerHTML = html;
+            console.log('✅ renderTables() terminé - tables rendues pour créneau:', selectedTimeslot);
         }
 
         // ============================================
@@ -3059,12 +3074,21 @@
         }
 
         function selectDate(dateStr) {
+            console.log('📅 selectDate() appelé avec:', dateStr);
             state.selectedDate = dateStr;
+
+            // Vider les réservations de l'ancienne date pour éviter d'afficher de mauvaises données
+            state.reservations = [];
+
             renderCalendar();
-            // Réinitialiser le slider pour le nouveau jour SANS rendre les tables
-            // car state.reservations contient encore les anciennes données
+
+            // Réinitialiser le slider pour le nouveau jour
             initTimeslotSlider(true);
-            // loadDashboard() va charger les nouvelles données et appeler renderTables()
+
+            // Rendre les tables vides immédiatement (pendant le chargement)
+            renderTables();
+
+            // Charger les nouvelles données - cela appellera renderTables() à nouveau avec les vraies données
             loadDashboard();
         }
 
@@ -3263,12 +3287,22 @@
         }
 
         function selectDateMobile(dateStr) {
+            console.log('📅 selectDateMobile() appelé avec:', dateStr);
             state.selectedDate = dateStr;
+
+            // Vider les réservations de l'ancienne date
+            state.reservations = [];
+
             updateMobileCalendar();
             renderCalendar();
-            // Réinitialiser le slider SANS rendre les tables (les données ne sont pas encore chargées)
+
+            // Réinitialiser le slider pour le nouveau jour
             initTimeslotSlider(true);
-            // loadDashboard() va charger les nouvelles données et appeler renderTables()
+
+            // Rendre les tables vides immédiatement
+            renderTables();
+
+            // Charger les nouvelles données
             loadDashboard();
             updateMobileDateText();
             closeMobilePanel('mobileCalendarPanel');
