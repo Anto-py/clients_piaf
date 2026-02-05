@@ -2083,7 +2083,17 @@
         
         function timeToMinutes(time) {
             if (!time) return 0;
-            const [h, m] = String(time).split(':').map(Number);
+            const timeStr = String(time);
+
+            // Gérer le format ISO (ex: "1899-12-30T18:30:00.000Z" ou "2024-01-15T18:30:00")
+            if (timeStr.includes('T')) {
+                const timePart = timeStr.split('T')[1]; // "18:30:00.000Z" ou "18:30:00"
+                const [h, m] = timePart.split(':').map(Number);
+                return h * 60 + m;
+            }
+
+            // Format simple "HH:MM"
+            const [h, m] = timeStr.split(':').map(Number);
             return h * 60 + m;
         }
         
