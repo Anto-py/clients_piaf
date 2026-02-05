@@ -2609,13 +2609,17 @@
         // ============================================
 
         function initFloorPlan() {
-            initTimeslotSlider();
+            // Initialiser le slider sans rendre les tables
+            // car state.reservations est vide au démarrage
+            // loadDashboard() va charger les données et appeler renderTables()
+            initTimeslotSlider(true);
         }
 
         /**
          * Initialise le slider de créneaux pour le jour sélectionné
+         * @param {boolean} skipRender - Si true, ne pas appeler renderTables() (utile lors du changement de date)
          */
-        function initTimeslotSlider() {
+        function initTimeslotSlider(skipRender = false) {
             const date = new Date(state.selectedDate);
             const dayOfWeek = date.getDay();
             const schedule = SCHEDULE[dayOfWeek];
@@ -2646,7 +2650,20 @@
             // Déterminer le créneau par défaut (le plus proche de l'heure actuelle ou le premier)
             const defaultIndex = getDefaultTimeslotIndex();
             slider.value = defaultIndex;
-            onTimeslotSliderChange(defaultIndex);
+
+            // Mettre à jour le créneau sélectionné
+            selectedTimeslot = availableTimeslots[defaultIndex];
+            document.getElementById('timeslotCurrent').textContent = selectedTimeslot;
+
+            // Mettre à jour les labels actifs
+            document.querySelectorAll('.timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === defaultIndex);
+            });
+
+            // Rendre les tables seulement si demandé (pas lors d'un changement de date)
+            if (!skipRender) {
+                renderTables();
+            }
         }
 
         /**
@@ -3044,7 +3061,10 @@
         function selectDate(dateStr) {
             state.selectedDate = dateStr;
             renderCalendar();
-            initTimeslotSlider(); // Réinitialiser le slider pour le nouveau jour
+            // Réinitialiser le slider pour le nouveau jour SANS rendre les tables
+            // car state.reservations contient encore les anciennes données
+            initTimeslotSlider(true);
+            // loadDashboard() va charger les nouvelles données et appeler renderTables()
             loadDashboard();
         }
 
@@ -3246,7 +3266,9 @@
             state.selectedDate = dateStr;
             updateMobileCalendar();
             renderCalendar();
-            initTimeslotSlider(); // Réinitialiser le slider pour le nouveau jour
+            // Réinitialiser le slider SANS rendre les tables (les données ne sont pas encore chargées)
+            initTimeslotSlider(true);
+            // loadDashboard() va charger les nouvelles données et appeler renderTables()
             loadDashboard();
             updateMobileDateText();
             closeMobilePanel('mobileCalendarPanel');
