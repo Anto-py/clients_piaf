@@ -2300,21 +2300,23 @@
             const occupiedTables = getOccupiedTablesAtTime(time, manualDateReservations);
             
             let html = '';
-            
-            for (let i = 1; i <= 8; i++) {
-                const occupied = occupiedTables.get(i);
+
+            // Utiliser les vraies tables depuis TABLES_CONFIG
+            for (const tableNum of TABLES_CONFIG.list) {
+                const occupied = occupiedTables.get(tableNum);
                 const isUnavailable = !!occupied;
-                const isSelected = state.manualSelectedTables.has(i);
-                
+                const isSelected = state.manualSelectedTables.has(tableNum);
+                const capacity = TABLES_CONFIG.capacity[tableNum] || 2;
+
                 html += `
-                    <div class="table-select-item ${isUnavailable ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}" 
-                         data-table="${i}"
-                         onclick="${isUnavailable ? '' : `toggleManualTable(${i})`}">
-                        <span class="table-number">${i}</span>
+                    <div class="table-select-item ${isUnavailable ? 'unavailable' : ''} ${isSelected ? 'selected' : ''}"
+                         data-table="${tableNum}"
+                         onclick="${isUnavailable ? '' : `toggleManualTable(${tableNum})`}">
+                        <span class="table-number">${tableNum}</span>
                         <span class="table-info">
-                            ${isUnavailable 
-                                ? `${escapeHtml(occupied.reservation.nom)}<br>${occupied.start}` 
-                                : '4 places'}
+                            ${isUnavailable
+                                ? `${escapeHtml(occupied.reservation.nom)}<br>${occupied.start}`
+                                : `${capacity} places`}
                         </span>
                     </div>
                 `;
