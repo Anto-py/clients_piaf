@@ -954,7 +954,8 @@
 
         const DATE_CONFIG = {
             DATES_PER_PAGE: 10,      // Nombre de dates affichées par page
-            MAX_ADVANCE_DAYS: 60     // Maximum de jours à l'avance (côté client)
+            START_DATE: new Date(2026, 1, 11),  // 11 février 2026
+            END_DATE: new Date(2026, 5, 30)     // 30 juin 2026
         };
 
         // Horaires pour affichage local (fallback)
@@ -1189,7 +1190,9 @@
         function generateDates() {
             const grid = document.getElementById('dateGrid');
             grid.innerHTML = '';
-            const today = new Date();
+            const startDate = new Date(DATE_CONFIG.START_DATE);
+            const endDate = new Date(DATE_CONFIG.END_DATE);
+            const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
             // Calculer le jour de départ basé sur l'offset
             const startDay = state.dateOffset * DATE_CONFIG.DATES_PER_PAGE;
@@ -1198,10 +1201,10 @@
                 const dayIndex = startDay + i;
 
                 // Ne pas afficher au-delà de la limite maximum
-                if (dayIndex >= DATE_CONFIG.MAX_ADVANCE_DAYS) break;
+                if (dayIndex >= totalDays) break;
 
-                const date = new Date(today);
-                date.setDate(today.getDate() + dayIndex);
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + dayIndex);
 
                 const dayOfWeek = date.getDay();
                 const isOpen = schedule[dayOfWeek].open;
@@ -1228,9 +1231,13 @@
             updateDateNavButtons();
         }
 
+        function getTotalDays() {
+            return Math.ceil((new Date(DATE_CONFIG.END_DATE) - new Date(DATE_CONFIG.START_DATE)) / (1000 * 60 * 60 * 24)) + 1;
+        }
+
         function navigateDates(direction) {
             const newOffset = state.dateOffset + direction;
-            const maxOffset = Math.ceil(DATE_CONFIG.MAX_ADVANCE_DAYS / DATE_CONFIG.DATES_PER_PAGE) - 1;
+            const maxOffset = Math.ceil(getTotalDays() / DATE_CONFIG.DATES_PER_PAGE) - 1;
 
             if (newOffset >= 0 && newOffset <= maxOffset) {
                 state.dateOffset = newOffset;
@@ -1241,7 +1248,7 @@
         function updateDateNavButtons() {
             const prevBtn = document.getElementById('datePrev');
             const nextBtn = document.getElementById('dateNext');
-            const maxOffset = Math.ceil(DATE_CONFIG.MAX_ADVANCE_DAYS / DATE_CONFIG.DATES_PER_PAGE) - 1;
+            const maxOffset = Math.ceil(getTotalDays() / DATE_CONFIG.DATES_PER_PAGE) - 1;
 
             prevBtn.disabled = state.dateOffset === 0;
             nextBtn.disabled = state.dateOffset >= maxOffset;

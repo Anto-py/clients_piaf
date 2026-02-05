@@ -37,7 +37,8 @@ const CONFIG = {
   },
   OCCUPATION_DURATION: 120, // durée d'occupation en minutes (2 heures)
   MIN_ADVANCE_HOURS: 2,
-  MAX_ADVANCE_DAYS: 60,  // 60 jours à l'avance (environ 2 mois)
+  START_DATE: '2026-02-11',  // Première date proposée: 11 février 2026
+  END_DATE: '2026-06-30',    // Dernière date proposée: 30 juin 2026
   SLOT_INTERVAL: 15
 };
 
