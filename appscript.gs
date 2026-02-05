@@ -51,11 +51,11 @@ function initializeSheet() {
   let reservationsSheet = ss.getSheetByName('Reservations');
   if (!reservationsSheet) {
     reservationsSheet = ss.insertSheet('Reservations');
-    reservationsSheet.getRange('A1:L1').setValues([[
-      'ID', 'Date', 'Heure', 'Personnes', 'Nom', 'Telephone', 
-      'Email', 'Langue', 'Statut', 'Tables', 'Cree_le', 'Commentaire'
+    reservationsSheet.getRange('A1:M1').setValues([[
+      'ID', 'Date', 'Heure', 'Personnes', 'Nom', 'Telephone',
+      'Email', 'Langue', 'Statut', 'Tables', 'Cree_le', 'Commentaire', 'Remarque'
     ]]);
-    reservationsSheet.getRange('A1:L1').setFontWeight('bold');
+    reservationsSheet.getRange('A1:M1').setFontWeight('bold');
     reservationsSheet.setFrozenRows(1);
     reservationsSheet.getRange('B:B').setNumberFormat('@');
   }
@@ -286,6 +286,17 @@ function handleRequest(e) {
           result = { success: false, error: 'Accès refusé' };
         } else {
           result = updateReservationGuests(params.id, parseInt(params.guests));
+        }
+        break;
+
+      // Modifier la remarque d'une réservation
+      case 'updateRemarque':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          let remarqueData = {};
+          try { remarqueData = JSON.parse(e.postData.contents); } catch (err) {}
+          result = updateReservationRemarque(params.id, remarqueData.remarque || '');
         }
         break;
 
@@ -538,9 +549,9 @@ function createReservation(data) {
   sheet.appendRow([
     id, normalizedDate, data.time, guests, data.name, data.phone,
     data.email, data.lang || 'fr', 'en attente', assignedTables,
-    new Date().toISOString(), ''
+    new Date().toISOString(), '', data.remarque || ''
   ]);
-  
+
   return { success: true, id, message: 'Réservation créée', tables: assignedTables };
 }
 
@@ -604,18 +615,19 @@ function createManualReservation(data) {
   const status = data.status || 'confirmée';
   
   sheet.appendRow([
-    id, 
-    normalizedDate, 
-    data.time, 
-    guests, 
-    data.name, 
-    data.phone || '', 
-    data.email || '', 
-    data.lang || 'fr', 
-    status, 
+    id,
+    normalizedDate,
+    data.time,
+    guests,
+    data.name,
+    data.phone || '',
+    data.email || '',
+    data.lang || 'fr',
+    status,
     data.tables || '',
-    new Date().toISOString(), 
-    data.comment || 'Réservation manuelle'
+    new Date().toISOString(),
+    data.comment || 'Réservation manuelle',
+    data.remarque || ''
   ]);
   
   return { 
@@ -798,7 +810,8 @@ function getReservations(date, status) {
     reservations.push({
       id: row[0], date: rowDate, heure: row[2], personnes: row[3],
       nom: row[4], telephone: row[5], email: row[6], langue: row[7],
-      statut: row[8], tables: row[9], creeLe: row[10], commentaire: row[11]
+      statut: row[8], tables: row[9], creeLe: row[10], commentaire: row[11],
+      remarque: row[12] || ''
     });
   }
 
@@ -898,6 +911,34 @@ function updateReservationGuests(id, newGuests) {
         message: 'Nombre de couverts mis à jour',
         previousGuests: data[i][3],
         newGuests: newGuests
+      };
+    }
+  }
+
+  return { success: false, error: 'Réservation non trouvée' };
+}
+
+/**
+ * Met à jour la remarque d'une réservation
+ */
+function updateReservationRemarque(id, newRemarque) {
+  if (!id) {
+    return { success: false, error: 'ID manquant' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Reservations');
+  const data = sheet.getDataRange().getValues();
+  const idStr = String(id);
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === idStr) {
+      sheet.getRange(i + 1, 13).setValue(newRemarque);
+      Logger.log('Remarque mise à jour pour ' + id + ': ' + newRemarque);
+      return {
+        success: true,
+        message: 'Remarque mise à jour',
+        remarque: newRemarque
       };
     }
   }
@@ -1231,6 +1272,7 @@ function buildReservationTable(reservations, accentColor) {
   html += '<th style="padding: 8px; text-align: center;">Pers.</th>';
   html += '<th style="padding: 8px; text-align: center;">Table(s)</th>';
   html += '<th style="padding: 8px; text-align: left;">Contact</th>';
+  html += '<th style="padding: 8px; text-align: left;">Remarque</th>';
   html += '</tr>';
 
   reservations.forEach(function(r, index) {
@@ -1248,6 +1290,7 @@ function buildReservationTable(reservations, accentColor) {
     }
     if (!r.telephone && !r.email) html += '—';
     html += '</td>';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 13px; font-style: italic;">' + (r.remarque || '—') + '</td>';
     html += '</tr>';
   });
 
