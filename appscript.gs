@@ -280,6 +280,15 @@ function handleRequest(e) {
         else { result = getDashboardData(params.date); }
         break;
 
+      // NOUVEAU: Modifier le nombre de couverts d'une réservation
+      case 'updateGuests':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          result = updateReservationGuests(params.id, parseInt(params.guests));
+        }
+        break;
+
       // NOUVEAU: Nettoyage manuel des réservations expirées
       case 'cleanupExpiredReservations':
         if (!checkAdminAccess(params.secret)) {
@@ -838,6 +847,35 @@ function updateReservationStatus(id, newStatus, comment = '', tables = null) {
     }
   }
   
+  return { success: false, error: 'Réservation non trouvée' };
+}
+
+/**
+ * Met à jour le nombre de couverts d'une réservation
+ */
+function updateReservationGuests(id, newGuests) {
+  if (!id || !newGuests || newGuests < 1 || newGuests > 32) {
+    return { success: false, error: 'Nombre de personnes invalide (1-32)' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Reservations');
+  const data = sheet.getDataRange().getValues();
+  const idStr = String(id);
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === idStr) {
+      sheet.getRange(i + 1, 4).setValue(newGuests);
+      Logger.log('Couverts mis à jour pour ' + id + ': ' + data[i][3] + ' -> ' + newGuests);
+      return {
+        success: true,
+        message: 'Nombre de couverts mis à jour',
+        previousGuests: data[i][3],
+        newGuests: newGuests
+      };
+    }
+  }
+
   return { success: false, error: 'Réservation non trouvée' };
 }
 

@@ -719,6 +719,11 @@
             border-radius: 0;
             font-size: 0.75rem;
             font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        .reservation-guests:hover {
+            background: var(--bleu-hover);
         }
 
         .reservation-details {
@@ -1919,6 +1924,24 @@
         </div>
     </div>
 
+    <!-- Modal Modifier le nombre de couverts -->
+    <div class="modal-overlay" id="editGuestsModal">
+        <div class="modal">
+            <h2 class="modal-title">Modifier le nombre de couverts</h2>
+            <p class="modal-subtitle" id="editGuestsModalSubtitle"></p>
+
+            <div class="form-group">
+                <label>Nombre de personnes</label>
+                <input type="number" id="editGuestsInput" min="1" max="32" value="2" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-size: 1rem;">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editGuestsModal')">Annuler</button>
+                <button class="btn btn-confirm" onclick="confirmEditGuests()">Valider</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // CONFIGURATION
@@ -1943,6 +1966,7 @@
             selectedTables: new Set(),
             pendingRefuseId: null,
             pendingDeleteId: null,
+            pendingEditGuestsId: null,
             manualSelectedTables: new Set(),
             // Cache des réservations par date pour éviter les appels API répétitifs
             reservationsCache: {}
@@ -2718,13 +2742,48 @@
         
         async function confirmDelete() {
             const result = await apiCall('deleteReservation', { id: state.pendingDeleteId });
-            
+
             closeModal('deleteModal');
 
             if (result.success) {
                 showToast('Réservation supprimée', 'success');
                 loadDashboard();
                 loadAllPendingReservations(); // Rafraîchir les demandes en attente
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
+        // MODIFIER LE NOMBRE DE COUVERTS
+        // ============================================
+
+        function openEditGuestsModal(id, name, currentGuests) {
+            state.pendingEditGuestsId = id;
+            document.getElementById('editGuestsModalSubtitle').textContent =
+                `Réservation de ${name} (actuellement ${currentGuests} personne${currentGuests > 1 ? 's' : ''})`;
+            document.getElementById('editGuestsInput').value = currentGuests;
+            document.getElementById('editGuestsModal').classList.add('active');
+        }
+
+        async function confirmEditGuests() {
+            const newGuests = parseInt(document.getElementById('editGuestsInput').value);
+            if (!newGuests || newGuests < 1 || newGuests > 32) {
+                showToast('Nombre de personnes invalide (1-32)', 'error');
+                return;
+            }
+
+            const result = await apiCall('updateGuests', {
+                id: state.pendingEditGuestsId,
+                guests: newGuests
+            });
+
+            closeModal('editGuestsModal');
+
+            if (result.success) {
+                showToast(`Couverts modifiés : ${result.previousGuests} → ${result.newGuests}`, 'success');
+                loadDashboard();
+                loadAllPendingReservations();
             } else {
                 showToast('Erreur: ' + result.error, 'error');
             }
@@ -2792,7 +2851,7 @@
                 <div class="reservation-card ${statusClass}">
                     <div class="reservation-header">
                         <span class="reservation-name">${escapedName}</span>
-                        <span class="reservation-guests">${r.personnes} pers.</span>
+                        <span class="reservation-guests" onclick="event.stopPropagation(); openEditGuestsModal('${r.id}', '${escapedName}', ${r.personnes})" title="Cliquer pour modifier le nombre de couverts">${r.personnes} pers. ✎</span>
                     </div>
                     <div class="reservation-details">
                         ${showDate ? `<span style="font-weight: 500; color: var(--bleu-piaf);">📅 ${formatDisplayDate(r.date)}</span>` : ''}
