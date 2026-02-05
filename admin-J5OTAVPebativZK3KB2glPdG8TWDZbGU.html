@@ -481,6 +481,19 @@
             background: rgba(220, 53, 69, 0.15);
         }
 
+        .table-item.buffer {
+            border-color: var(--gris-texte);
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(150, 150, 150, 0.1),
+                rgba(150, 150, 150, 0.1) 5px,
+                rgba(150, 150, 150, 0.25) 5px,
+                rgba(150, 150, 150, 0.25) 10px
+            );
+        }
+
+        .table-item.buffer .table-places { color: var(--gris-texte); }
+
         .table-number {
             font-weight: 600;
             font-size: 1.1rem;
@@ -3021,6 +3034,48 @@
         }
 
         /**
+         * Retourne les tables qui sont dans le buffer (réservation à venir dans les 2h)
+         * mais qui ne sont pas encore occupées (la réservation n'a pas encore commencé)
+         * @returns {Map<number, {reservation: object, resStart: string}>} Map des tables en buffer
+         */
+        function getBufferTablesAtSlot(reservations) {
+            const bufferTables = new Map();
+
+            if (!selectedTimeslot) return bufferTables;
+
+            const slotMinutes = timeToMinutes(selectedTimeslot);
+            const slotEnd = slotMinutes + OCCUPATION_DURATION;
+
+            reservations
+                .filter(r => r.statut !== 'refusée' && r.tables)
+                .forEach(r => {
+                    const resStart = timeToMinutes(r.heure);
+                    const resEnd = resStart + OCCUPATION_DURATION;
+
+                    // La table est dans le buffer si:
+                    // 1. Le créneau actuel est AVANT le début de la réservation (slotMinutes < resStart)
+                    // 2. MAIS le créneau actuel + 2h chevauche la zone protégée (slotEnd > resStart - OCCUPATION_DURATION)
+                    // Cela signifie qu'on est dans les 2h avant la réservation
+                    const isBeforeReservation = slotMinutes < resStart;
+                    const isInBuffer = slotEnd > (resStart - OCCUPATION_DURATION);
+
+                    if (isBeforeReservation && isInBuffer) {
+                        String(r.tables).split(',').forEach(t => {
+                            const tableNum = parseInt(t.trim());
+                            if (!bufferTables.has(tableNum)) {
+                                bufferTables.set(tableNum, {
+                                    reservation: r,
+                                    resStart: r.heure
+                                });
+                            }
+                        });
+                    }
+                });
+
+            return bufferTables;
+        }
+
+        /**
          * Retourne les tables occupées au créneau sélectionné avec leurs réservations
          */
         function getOccupiedTablesAtSelectedTimeslot() {
@@ -3048,6 +3103,9 @@
             // Récupérer les réservations à afficher selon le mode
             const slotReservations = getReservationsForSlot(state.reservations);
 
+            // Récupérer les tables en buffer (réservation à venir dans les 2h)
+            const bufferTables = getBufferTablesAtSlot(state.reservations);
+
             // Grouper les réservations par table
             const tableInfo = new Map();
             slotReservations
@@ -3068,6 +3126,7 @@
             TABLES_CONFIG.list.forEach(tableNum => {
                 const capacity = TABLES_CONFIG.capacity[tableNum];
                 const reservations = tableInfo.get(tableNum) || [];
+                const bufferInfo = bufferTables.get(tableNum);
 
                 // Calculer les places occupées
                 let placesOccupees = 0;
@@ -3088,17 +3147,23 @@
 
                 // Déterminer le statut
                 let statusClass = 'libre';
+                let statusText = `${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}`;
+
                 if (placesOccupees >= capacity) {
                     statusClass = 'complete';
                 } else if (placesOccupees > 0) {
                     statusClass = 'partielle';
+                } else if (bufferInfo) {
+                    // Table libre mais dans le buffer (réservation à venir)
+                    statusClass = 'buffer';
+                    statusText = `Réservé à ${bufferInfo.resStart}`;
                 }
 
                 html += `
                     <div class="table-item table-${tableNum} ${statusClass}" onclick="openTableDetail(${tableNum})">
                         <span class="table-number">${tableNum}</span>
                         <span class="table-capacity">${capacity} places</span>
-                        <span class="table-places">${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}</span>
+                        <span class="table-places">${statusText}</span>
                     </div>
                 `;
             });
