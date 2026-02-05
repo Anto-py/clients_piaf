@@ -1819,17 +1819,26 @@
             <h2 class="modal-title">Ajouter une réservation</h2>
             <p class="modal-subtitle">Pour les réservations par téléphone</p>
             
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Date *</label>
-                    <input type="date" id="manualDate">
+            <div class="form-group">
+                <label>Date *</label>
+                <input type="date" id="manualDate">
+            </div>
+
+            <!-- Slider d'heures (comme dans le plan principal) -->
+            <div class="timeslot-slider-container" id="manualTimeslotSliderContainer">
+                <div class="timeslot-slider-header">
+                    <span class="timeslot-slider-label">Créneau horaire</span>
+                    <span class="timeslot-current" id="manualTimeslotCurrent">--:--</span>
                 </div>
-                <div class="form-group">
-                    <label>Heure *</label>
-                    <input type="time" id="manualTime" value="12:00">
+                <div class="timeslot-slider-wrapper">
+                    <input type="range" class="timeslot-slider" id="manualTimeslotSlider"
+                           min="0" max="5" value="0" oninput="onManualTimeslotSliderChange(this.value)">
+                </div>
+                <div class="timeslot-labels" id="manualTimeslotLabels">
+                    <!-- Les labels seront générés par JavaScript -->
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label>Nombre de personnes *</label>
                 <input type="number" id="manualGuests" min="1" max="32" value="2">
@@ -2355,37 +2364,37 @@
         // Stocker les réservations de la date manuelle pour éviter les appels répétés
         let manualDateReservations = [];
         let manualCurrentDate = null;
+        let manualAvailableTimeslots = [];
+        let manualSelectedTimeslot = null;
         
         function openManualReservationModal() {
             state.manualSelectedTables = new Set();
             manualDateReservations = [];
             manualCurrentDate = null;
-            
+
             // Pré-remplir avec la date sélectionnée
             document.getElementById('manualDate').value = state.selectedDate;
-            document.getElementById('manualTime').value = '12:00';
             document.getElementById('manualGuests').value = '2';
             document.getElementById('manualName').value = '';
             document.getElementById('manualPhone').value = '';
             document.getElementById('manualEmail').value = '';
             document.getElementById('manualComment').value = '';
-            
+
             // Cacher l'alerte de conflit
             document.getElementById('manualConflictAlert').classList.remove('visible');
-            
-            // Initialiser le sélecteur de tables
-            updateManualTableSelector();
-            
+
+            // Initialiser le slider d'heures
+            initManualTimeslotSlider();
+
             document.getElementById('manualReservationModal').classList.add('active');
-            
-            // Ajouter des écouteurs pour mettre à jour les tables disponibles
-            document.getElementById('manualDate').addEventListener('change', updateManualTableSelector);
-            document.getElementById('manualTime').addEventListener('change', updateManualTableSelector);
+
+            // Ajouter un écouteur pour mettre à jour le slider quand la date change
+            document.getElementById('manualDate').addEventListener('change', initManualTimeslotSlider);
         }
         
         async function updateManualTableSelector() {
             const date = document.getElementById('manualDate').value;
-            const time = document.getElementById('manualTime').value;
+            const time = manualSelectedTimeslot;
             const floorGrid = document.getElementById('manualFloorGrid');
 
             // Cacher l'alerte de conflit
@@ -2393,7 +2402,7 @@
 
             if (!date || !time) {
                 floorGrid.innerHTML =
-                    '<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Sélectionnez une date et une heure</p>';
+                    '<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Sélectionnez une date et un créneau horaire</p>';
                 return;
             }
 
@@ -2448,6 +2457,78 @@
 
             floorGrid.innerHTML = html;
             updateManualSelectedTablesSummary();
+        }
+
+        /**
+         * Initialise le slider d'heures du modal manuel
+         */
+        async function initManualTimeslotSlider() {
+            const dateInput = document.getElementById('manualDate');
+            const date = new Date(dateInput.value);
+            const dayOfWeek = date.getDay();
+            const schedule = SCHEDULE[dayOfWeek];
+            const container = document.getElementById('manualTimeslotSliderContainer');
+            const slider = document.getElementById('manualTimeslotSlider');
+            const labelsContainer = document.getElementById('manualTimeslotLabels');
+
+            // Si le jour est fermé ou pas de créneaux
+            if (!schedule || !schedule.open || !schedule.slots || schedule.slots.length === 0) {
+                container.classList.remove('visible');
+                manualAvailableTimeslots = [];
+                manualSelectedTimeslot = null;
+                document.getElementById('manualFloorGrid').innerHTML =
+                    '<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Restaurant fermé ce jour-là</p>';
+                return;
+            }
+
+            manualAvailableTimeslots = schedule.slots;
+            container.classList.add('visible');
+
+            // Configurer le slider
+            slider.min = 0;
+            slider.max = manualAvailableTimeslots.length - 1;
+
+            // Générer les labels
+            labelsContainer.innerHTML = manualAvailableTimeslots.map((slot, index) =>
+                `<span class="timeslot-label" data-index="${index}">${slot}</span>`
+            ).join('');
+
+            // Déterminer le créneau par défaut (le premier pour simplifier)
+            const defaultIndex = 0;
+            slider.value = defaultIndex;
+
+            // Mettre à jour le créneau sélectionné
+            manualSelectedTimeslot = manualAvailableTimeslots[defaultIndex];
+            document.getElementById('manualTimeslotCurrent').textContent = manualSelectedTimeslot;
+
+            // Mettre à jour les labels actifs
+            document.querySelectorAll('#manualTimeslotLabels .timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === defaultIndex);
+            });
+
+            // Charger et afficher les tables pour ce créneau
+            await updateManualTableSelector();
+        }
+
+        /**
+         * Appelé quand le slider du modal change de valeur
+         */
+        function onManualTimeslotSliderChange(value) {
+            const index = parseInt(value);
+            if (index < 0 || index >= manualAvailableTimeslots.length) return;
+
+            manualSelectedTimeslot = manualAvailableTimeslots[index];
+
+            // Mettre à jour l'affichage du créneau actuel
+            document.getElementById('manualTimeslotCurrent').textContent = manualSelectedTimeslot;
+
+            // Mettre à jour les labels actifs
+            document.querySelectorAll('#manualTimeslotLabels .timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === index);
+            });
+
+            // Rafraîchir l'affichage des tables
+            updateManualTableSelector();
         }
 
         /**
@@ -2528,15 +2609,15 @@
          * Vérifie les conflits potentiels lors de la sélection manuelle
          */
         function checkManualConflicts() {
-            const time = document.getElementById('manualTime').value;
+            const time = manualSelectedTimeslot;
             const alertEl = document.getElementById('manualConflictAlert');
             const alertTextEl = document.getElementById('manualConflictText');
-            
+
             if (state.manualSelectedTables.size === 0) {
                 alertEl.classList.remove('visible');
                 return;
             }
-            
+
             const conflicts = detectConflicts(time, state.manualSelectedTables, manualDateReservations);
             
             if (conflicts.length > 0) {
@@ -2559,14 +2640,14 @@
         
         async function createManualReservation() {
             const date = document.getElementById('manualDate').value;
-            const time = document.getElementById('manualTime').value;
+            const time = manualSelectedTimeslot;
             const guests = document.getElementById('manualGuests').value;
             const name = document.getElementById('manualName').value.trim();
             const phone = document.getElementById('manualPhone').value.trim();
             const email = document.getElementById('manualEmail').value.trim();
             const comment = document.getElementById('manualComment').value.trim();
             const tables = Array.from(state.manualSelectedTables).sort((a, b) => a - b).join(', ');
-            
+
             // Validation des champs obligatoires
             if (!date || !time || !guests || !name) {
                 showToast('Veuillez remplir les champs obligatoires', 'error');
