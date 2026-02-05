@@ -316,6 +316,32 @@ function handleRequest(e) {
         }
         break;
 
+      // Email récapitulatif quotidien
+      case 'setupDailyEmail':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          result = setupDailyEmailTrigger();
+        }
+        break;
+
+      case 'removeDailyEmail':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          result = removeDailyEmailTrigger();
+        }
+        break;
+
+      case 'sendTestDailyEmail':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          sendDailyReservationEmail();
+          result = { success: true, message: 'Email récapitulatif de test envoyé' };
+        }
+        break;
+
       default:
         result = { success: false, error: 'Action inconnue: ' + action };
     }
@@ -1091,6 +1117,183 @@ Het ${restaurantName} team`
   } catch (e) {
     Logger.log('Erreur email: ' + e);
   }
+}
+
+// ============================================
+// EMAIL RÉCAPITULATIF QUOTIDIEN
+// ============================================
+
+/**
+ * Envoie un email récapitulatif des réservations du jour à hellopiaf@gmail.com
+ * Exécutée automatiquement tous les jours à 8h (sauf lundi et mardi)
+ */
+function sendDailyReservationEmail() {
+  const TIMEZONE = 'Europe/Brussels';
+  const now = new Date();
+  const dayOfWeek = parseInt(Utilities.formatDate(now, TIMEZONE, 'u')); // 1=lundi, 7=dimanche
+
+  // Ne pas envoyer le lundi (1) et le mardi (2)
+  if (dayOfWeek === 1 || dayOfWeek === 2) {
+    Logger.log('Email quotidien ignoré : jour de fermeture (lundi ou mardi)');
+    return;
+  }
+
+  const todayStr = Utilities.formatDate(now, TIMEZONE, 'yyyy-MM-dd');
+  const reservations = getReservationsForDate(todayStr);
+
+  // Filtrer : uniquement "confirmée" et "en attente"
+  const confirmed = reservations
+    .filter(r => r.statut === 'confirmée')
+    .sort((a, b) => timeToMinutes(a.heure) - timeToMinutes(b.heure));
+
+  const pending = reservations
+    .filter(r => r.statut === 'en attente')
+    .sort((a, b) => timeToMinutes(a.heure) - timeToMinutes(b.heure));
+
+  const totalReservations = confirmed.length + pending.length;
+  const restaurantName = getConfig('NOM_RESTAURANT') || 'Piaf';
+
+  // Formater la date en français
+  const dateDisplay = formatDateDisplay(todayStr, 'fr');
+
+  let subject, body;
+
+  if (totalReservations === 0) {
+    subject = `${restaurantName} - Aucune réservation pour le ${dateDisplay}`;
+    body = buildDailyEmailHtml(dateDisplay, restaurantName, confirmed, pending, true);
+  } else {
+    subject = `${restaurantName} - ${totalReservations} réservation(s) pour le ${dateDisplay}`;
+    body = buildDailyEmailHtml(dateDisplay, restaurantName, confirmed, pending, false);
+  }
+
+  try {
+    MailApp.sendEmail({
+      to: 'hellopiaf@gmail.com',
+      subject: subject,
+      htmlBody: body
+    });
+    Logger.log('Email récapitulatif quotidien envoyé pour le ' + todayStr + ' (' + totalReservations + ' réservation(s))');
+  } catch (e) {
+    Logger.log('ERREUR envoi email récapitulatif: ' + e.toString());
+  }
+}
+
+/**
+ * Construit le contenu HTML de l'email récapitulatif quotidien
+ */
+function buildDailyEmailHtml(dateDisplay, restaurantName, confirmed, pending, isEmpty) {
+  let html = '<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">';
+  html += '<h2 style="color: #333; border-bottom: 2px solid #c8a97e; padding-bottom: 10px;">';
+  html += restaurantName + ' — Réservations du ' + dateDisplay;
+  html += '</h2>';
+
+  if (isEmpty) {
+    html += '<p style="color: #666; font-size: 16px; padding: 20px 0;">Aucune réservation pour aujourd\'hui.</p>';
+    html += '</div>';
+    return html;
+  }
+
+  // Résumé
+  const totalGuests = confirmed.reduce((sum, r) => sum + (parseInt(r.personnes) || 0), 0)
+    + pending.reduce((sum, r) => sum + (parseInt(r.personnes) || 0), 0);
+  html += '<p style="color: #555; font-size: 14px; margin-bottom: 20px;">';
+  html += '<strong>' + (confirmed.length + pending.length) + '</strong> réservation(s) — ';
+  html += '<strong>' + totalGuests + '</strong> couverts au total';
+  html += '</p>';
+
+  // Réservations confirmées
+  if (confirmed.length > 0) {
+    html += '<h3 style="color: #2e7d32; margin-top: 20px;">Confirmées (' + confirmed.length + ')</h3>';
+    html += buildReservationTable(confirmed, '#2e7d32');
+  }
+
+  // Réservations en attente
+  if (pending.length > 0) {
+    html += '<h3 style="color: #ef6c00; margin-top: 20px;">En attente (' + pending.length + ')</h3>';
+    html += buildReservationTable(pending, '#ef6c00');
+  }
+
+  html += '<hr style="border: none; border-top: 1px solid #ddd; margin-top: 30px;">';
+  html += '<p style="color: #999; font-size: 12px;">Email automatique envoyé par le système de réservation ' + restaurantName + '</p>';
+  html += '</div>';
+
+  return html;
+}
+
+/**
+ * Construit un tableau HTML pour une liste de réservations
+ */
+function buildReservationTable(reservations, accentColor) {
+  let html = '<table style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">';
+  html += '<tr style="background-color: ' + accentColor + '; color: white;">';
+  html += '<th style="padding: 8px; text-align: left;">Heure</th>';
+  html += '<th style="padding: 8px; text-align: left;">Nom</th>';
+  html += '<th style="padding: 8px; text-align: center;">Pers.</th>';
+  html += '<th style="padding: 8px; text-align: center;">Table(s)</th>';
+  html += '<th style="padding: 8px; text-align: left;">Contact</th>';
+  html += '</tr>';
+
+  reservations.forEach(function(r, index) {
+    const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
+    html += '<tr style="background-color: ' + bgColor + ';">';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>' + r.heure + '</strong></td>';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee;">' + r.nom + '</td>';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">' + r.personnes + '</td>';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">' + (r.tables || '—') + '</td>';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee; font-size: 13px;">';
+    html += r.telephone ? r.telephone : '';
+    if (r.email) {
+      html += r.telephone ? '<br>' : '';
+      html += r.email;
+    }
+    if (!r.telephone && !r.email) html += '—';
+    html += '</td>';
+    html += '</tr>';
+  });
+
+  html += '</table>';
+  return html;
+}
+
+/**
+ * Installe le trigger pour l'envoi quotidien de l'email récapitulatif à 8h
+ */
+function setupDailyEmailTrigger() {
+  // Supprimer les anciens triggers du même type pour éviter les doublons
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === 'sendDailyReservationEmail') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  // Créer un nouveau trigger qui s'exécute tous les jours entre 8h et 9h
+  ScriptApp.newTrigger('sendDailyReservationEmail')
+    .timeBased()
+    .atHour(8)
+    .everyDays(1)
+    .create();
+
+  Logger.log('Trigger email quotidien installé (exécution tous les jours à 8h)');
+  return { success: true, message: 'Trigger email quotidien installé (exécution tous les jours à 8h)' };
+}
+
+/**
+ * Supprime le trigger d'envoi quotidien de l'email récapitulatif
+ */
+function removeDailyEmailTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  let removed = 0;
+
+  triggers.forEach(function(trigger) {
+    if (trigger.getHandlerFunction() === 'sendDailyReservationEmail') {
+      ScriptApp.deleteTrigger(trigger);
+      removed++;
+    }
+  });
+
+  Logger.log(removed + ' trigger(s) email quotidien supprimé(s)');
+  return { success: true, message: removed + ' trigger(s) email quotidien supprimé(s)' };
 }
 
 function formatDateDisplay(dateStr, lang) {
