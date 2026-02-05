@@ -2138,21 +2138,22 @@
         
         /**
          * Calcule les tables occupées à un créneau donné
+         * Inclut les réservations "confirmées" ET "en attente" (exclut "refusée")
          */
         function getOccupiedTablesAtTime(timeStr, reservations, excludeReservationId = null) {
             const occupiedTables = new Map(); // table -> { reservation, start, end }
-            
+
             const slotMinutes = timeToMinutes(timeStr);
             const slotEnd = slotMinutes + OCCUPATION_DURATION;
-            
+
             reservations
-                .filter(r => r.statut === 'confirmée' && r.tables && r.id !== excludeReservationId)
+                .filter(r => r.statut !== 'refusée' && r.tables && r.id !== excludeReservationId)
                 .forEach(r => {
                     const resStart = timeToMinutes(r.heure);
                     const resEnd = resStart + OCCUPATION_DURATION;
-                    
+
                     // Zone protégée: de (resStart - OCCUPATION_DURATION) à resEnd
-                    // Pour respecter la contrainte "1h30 avant"
+                    // Pour respecter la contrainte "2h avant et après"
                     const protectedZoneStart = resStart - OCCUPATION_DURATION;
                     const protectedZoneEnd = resEnd;
                     
@@ -2175,14 +2176,15 @@
         /**
          * Détecte les conflits potentiels pour des tables sélectionnées
          * Retourne un objet avec les détails des conflits
+         * Inclut les réservations "confirmées" ET "en attente" (exclut "refusée")
          */
         function detectConflicts(timeStr, selectedTables, reservations, excludeReservationId = null) {
             const conflicts = [];
             const slotMinutes = timeToMinutes(timeStr);
             const slotEnd = slotMinutes + OCCUPATION_DURATION;
-            
+
             reservations
-                .filter(r => r.statut === 'confirmée' && r.tables && r.id !== excludeReservationId)
+                .filter(r => r.statut !== 'refusée' && r.tables && r.id !== excludeReservationId)
                 .forEach(r => {
                     const resStart = timeToMinutes(r.heure);
                     const resEnd = resStart + OCCUPATION_DURATION;
@@ -2328,19 +2330,19 @@
             );
             
             if (conflicts.length > 0) {
-                const conflictDetails = conflicts.map(c => 
-                    `Table(s) ${c.tables.join(', ')} : ${c.reservation.nom} à ${c.reservation.heure}`
-                ).join('\n');
-                
+                const conflictDetails = conflicts.map(c =>
+                    `Attention : La table ${c.tables.join(', ')} est déjà réservée à ${c.reservation.heure}. Il y a moins de 2 heures entre les deux réservations, ce qui peut ne pas laisser assez de temps aux clients.`
+                ).join('\n\n');
+
                 const confirmed = confirm(
-                    `⚠️ ATTENTION : Conflit détecté !\n\n${conflictDetails}\n\nÊtes-vous sûr de vouloir confirmer malgré le conflit ?`
+                    `${conflictDetails}\n\nVoulez-vous quand même confirmer cette réservation ?`
                 );
-                
+
                 if (!confirmed) {
                     return;
                 }
             }
-            
+
             const result = await apiCall('confirmReservation', { 
                 id: state.pendingConfirmId,
                 tables: tables
@@ -2622,14 +2624,14 @@
             
             if (conflicts.length > 0) {
                 let conflictHtml = 'Les tables sélectionnées entrent en conflit avec :<ul class="conflict-list">';
-                
+
                 conflicts.forEach(c => {
-                    const conflictType = c.type === 'overlap' 
-                        ? 'chevauchement direct' 
-                        : 'moins de 1h30 de marge';
+                    const conflictType = c.type === 'overlap'
+                        ? 'chevauchement direct'
+                        : 'moins de 2h de marge';
                     conflictHtml += `<li><strong>Table(s) ${c.tables.join(', ')}</strong> : ${escapeHtml(c.reservation.nom)} à ${c.reservation.heure} (${conflictType})</li>`;
                 });
-                
+
                 conflictHtml += '</ul>';
                 alertTextEl.innerHTML = conflictHtml;
                 alertEl.classList.add('visible');
@@ -2660,12 +2662,12 @@
                 
                 if (conflicts.length > 0) {
                     // Afficher une confirmation si conflit détecté
-                    const conflictDetails = conflicts.map(c => 
-                        `Table(s) ${c.tables.join(', ')} : ${c.reservation.nom} à ${c.reservation.heure}`
-                    ).join('\n');
-                    
+                    const conflictDetails = conflicts.map(c =>
+                        `Attention : La table ${c.tables.join(', ')} est déjà réservée à ${c.reservation.heure}. Il y a moins de 2 heures entre les deux réservations, ce qui peut ne pas laisser assez de temps aux clients.`
+                    ).join('\n\n');
+
                     const confirmed = confirm(
-                        `⚠️ ATTENTION : Conflit détecté !\n\n${conflictDetails}\n\nÊtes-vous sûr de vouloir créer cette réservation malgré le conflit ?`
+                        `${conflictDetails}\n\nVoulez-vous quand même créer cette réservation ?`
                     );
                     
                     if (!confirmed) {

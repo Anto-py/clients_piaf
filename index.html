@@ -1311,12 +1311,14 @@
                 serviceSlots.forEach(slot => {
                     const div = document.createElement('div');
                     div.className = `time-option ${!slot.available ? 'disabled' : ''}`;
-                    div.textContent = slot.time;
                     div.dataset.time = slot.time;
 
                     if (slot.available) {
+                        div.textContent = slot.time;
                         hasAvailableSlots = true;
                         div.onclick = () => selectTime(div);
+                    } else {
+                        div.textContent = slot.time + ' - Complet';
                     }
 
                     grid.appendChild(div);
