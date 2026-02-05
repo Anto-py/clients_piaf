@@ -1026,6 +1026,17 @@
             background: rgba(220, 53, 69, 0.15);
         }
 
+        .legend-color.buffer {
+            border-color: var(--gris-texte);
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(150, 150, 150, 0.1),
+                rgba(150, 150, 150, 0.1) 3px,
+                rgba(150, 150, 150, 0.25) 3px,
+                rgba(150, 150, 150, 0.25) 6px
+            );
+        }
+
         .legend-color.selected {
             border-color: var(--bleu-piaf);
             background: rgba(42, 53, 147, 0.15);
@@ -1897,6 +1908,7 @@
                     <div class="legend-item"><span class="legend-color libre"></span> Libre</div>
                     <div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
                     <div class="legend-item"><span class="legend-color complete"></span> Complète</div>
+                    <div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
                     <div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
                 </div>
             </div>
@@ -2463,6 +2475,9 @@
             // Calculer l'occupation des tables à l'heure sélectionnée
             const tableOccupancy = calculateTableOccupancy(time, manualDateReservations);
 
+            // Récupérer les tables en buffer (réservation à venir dans les 2h)
+            const bufferTables = getBufferTablesAtSlot(manualDateReservations, time);
+
             let html = '';
 
             // Générer les tables avec disposition spatiale (même layout que le plan principal)
@@ -2471,13 +2486,18 @@
                 const occupancy = tableOccupancy.get(tableNum) || { placesOccupees: 0, reservations: [] };
                 const placesLibres = capacity - occupancy.placesOccupees;
                 const isSelected = state.manualSelectedTables.has(tableNum);
+                const bufferInfo = bufferTables.get(tableNum);
 
                 // Déterminer le statut (couleur)
                 let statusClass = 'libre';
+                let statusText = `${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}`;
                 if (occupancy.placesOccupees >= capacity) {
                     statusClass = 'complete';
                 } else if (occupancy.placesOccupees > 0) {
                     statusClass = 'partielle';
+                } else if (bufferInfo) {
+                    statusClass = 'buffer';
+                    statusText = `Réservé à ${bufferInfo.resStart}`;
                 }
 
                 html += `
@@ -2486,7 +2506,7 @@
                          onclick="toggleManualTable(${tableNum})">
                         <span class="table-number">${tableNum}</span>
                         <span class="table-capacity">${capacity} places</span>
-                        <span class="table-places">${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}</span>
+                        <span class="table-places">${statusText}</span>
                     </div>
                 `;
             });
@@ -3097,12 +3117,13 @@
          * mais qui ne sont pas encore occupées (la réservation n'a pas encore commencé)
          * @returns {Map<number, {reservation: object, resStart: string}>} Map des tables en buffer
          */
-        function getBufferTablesAtSlot(reservations) {
+        function getBufferTablesAtSlot(reservations, timeslot) {
             const bufferTables = new Map();
+            const slot = timeslot || selectedTimeslot;
 
-            if (!selectedTimeslot) return bufferTables;
+            if (!slot) return bufferTables;
 
-            const slotMinutes = timeToMinutes(selectedTimeslot);
+            const slotMinutes = timeToMinutes(slot);
             const slotEnd = slotMinutes + OCCUPATION_DURATION;
 
             reservations
