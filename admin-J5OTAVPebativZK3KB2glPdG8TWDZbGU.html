@@ -1947,18 +1947,8 @@
                 Créneau horaire :
             </label>
 
-            <!-- Slider d'heures pour l'édition -->
-            <div class="timeslot-slider-container" id="editResTimeslotContainer">
-                <div class="timeslot-slider-header">
-                    <span class="timeslot-slider-label">Heure</span>
-                    <span class="timeslot-current" id="editResTimeslotCurrent">--:--</span>
-                </div>
-                <div class="timeslot-slider-wrapper">
-                    <input type="range" class="timeslot-slider" id="editResTimeslotSlider"
-                           min="0" max="5" value="0" oninput="onEditResTimeslotChange(this.value)">
-                </div>
-                <div class="timeslot-labels" id="editResTimeslotLabels">
-                </div>
+            <!-- Boutons de créneaux pour l'édition -->
+            <div id="editResTimeslotContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
             </div>
 
             <!-- Alerte de conflit -->
@@ -3140,36 +3130,26 @@
             // Charger les réservations pour la date
             editResDateReservations = await getReservationsForDate(reservation.date);
 
-            // Initialiser le slider de créneaux
-            initEditResTimeslotSlider(reservation);
+            // Initialiser les boutons de créneaux
+            initEditResTimeslotButtons(reservation);
 
             document.getElementById('editReservationModal').classList.add('active');
         }
 
-        function initEditResTimeslotSlider(reservation) {
+        function initEditResTimeslotButtons(reservation) {
             const date = new Date(reservation.date);
             const dayOfWeek = date.getDay();
             const schedule = SCHEDULE[dayOfWeek];
             const container = document.getElementById('editResTimeslotContainer');
-            const slider = document.getElementById('editResTimeslotSlider');
-            const labelsContainer = document.getElementById('editResTimeslotLabels');
 
             if (!schedule || !schedule.open || !schedule.slots || schedule.slots.length === 0) {
-                container.classList.remove('visible');
+                container.innerHTML = '<p style="color: var(--gris); font-size: 0.85rem;">Aucun créneau disponible</p>';
                 editResAvailableTimeslots = [];
                 editResSelectedTimeslot = null;
                 return;
             }
 
             editResAvailableTimeslots = schedule.slots;
-            container.classList.add('visible');
-
-            slider.min = 0;
-            slider.max = editResAvailableTimeslots.length - 1;
-
-            labelsContainer.innerHTML = editResAvailableTimeslots.map((slot, index) =>
-                `<span class="timeslot-label" data-index="${index}">${slot}</span>`
-            ).join('');
 
             // Trouver le créneau le plus proche de l'heure actuelle de la réservation
             const reservationMinutes = timeToMinutes(reservation.heure);
@@ -3183,27 +3163,23 @@
                 }
             });
 
-            slider.value = closestIndex;
             editResSelectedTimeslot = editResAvailableTimeslots[closestIndex];
-            document.getElementById('editResTimeslotCurrent').textContent = editResSelectedTimeslot;
 
-            document.querySelectorAll('#editResTimeslotLabels .timeslot-label').forEach((label, i) => {
-                label.classList.toggle('active', i === closestIndex);
-            });
+            container.innerHTML = editResAvailableTimeslots.map((slot, index) =>
+                `<button type="button" class="slot-btn ${index === closestIndex ? 'active' : ''}" onclick="selectEditResTimeslot('${slot}', this)">${slot}</button>`
+            ).join('');
 
             renderEditResFloorPlan();
         }
 
-        function onEditResTimeslotChange(value) {
-            const index = parseInt(value);
-            if (index < 0 || index >= editResAvailableTimeslots.length) return;
+        function selectEditResTimeslot(slot, btnEl) {
+            editResSelectedTimeslot = slot;
 
-            editResSelectedTimeslot = editResAvailableTimeslots[index];
-            document.getElementById('editResTimeslotCurrent').textContent = editResSelectedTimeslot;
-
-            document.querySelectorAll('#editResTimeslotLabels .timeslot-label').forEach((label, i) => {
-                label.classList.toggle('active', i === index);
+            // Mettre à jour le style des boutons
+            document.querySelectorAll('#editResTimeslotContainer .slot-btn').forEach(btn => {
+                btn.classList.remove('active');
             });
+            btnEl.classList.add('active');
 
             renderEditResFloorPlan();
         }
@@ -3392,8 +3368,8 @@
                 showToast('Réservation mise à jour', 'success');
                 // Invalider le cache pour la date concernée
                 delete state.reservationsCache[editResReservation.date];
-                loadDashboard();
-                loadAllPendingReservations();
+                await loadDashboard();
+                await loadAllPendingReservations();
             } else {
                 showToast('Erreur: ' + result.error, 'error');
             }
