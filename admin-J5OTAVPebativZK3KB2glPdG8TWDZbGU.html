@@ -2236,11 +2236,26 @@
             return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
         }
 
+        /**
+         * Formate un champ heure pour l'affichage (gère le format ISO et HH:MM)
+         * Ex: "1899-12-30T13:00:00.000Z" → "13:00", "18:30" → "18:30"
+         */
+        function formatTimeForDisplay(time) {
+            if (!time) return '';
+            const timeStr = String(time);
+            if (timeStr.includes('T')) {
+                const timePart = timeStr.split('T')[1];
+                const [h, m] = timePart.split(':');
+                return `${h}:${m}`;
+            }
+            return timeStr;
+        }
+
         // ============================================
         // MODAL DE CONFIRMATION AVEC SÉLECTION DE TABLES
         // ============================================
         
-        function openConfirmModal(reservation) {
+        async function openConfirmModal(reservation) {
             state.pendingConfirmId = reservation.id;
             state.pendingConfirmReservation = reservation;
             state.selectedTables = new Set();
@@ -2251,23 +2266,36 @@
             document.getElementById('confirmModalSubtitle').textContent =
                 `Réservation de ${reservation.nom}`;
             document.getElementById('guestsCount').textContent = guests;
-            document.getElementById('reservationTime').textContent = reservation.heure;
+            document.getElementById('reservationTime').textContent = formatTimeForDisplay(reservation.heure);
             document.getElementById('tablesNeeded').textContent =
                 tablesNeeded === 1 ? '1 table requise' : '2 tables requises';
 
             // Cacher l'alerte de conflit
             document.getElementById('confirmConflictAlert').classList.remove('visible');
 
-            // Calculer l'occupation des tables à l'heure de la réservation
+            // Ouvrir le modal avec un état de chargement
+            const floorGrid = document.getElementById('confirmFloorGrid');
+            floorGrid.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 2rem;">
+                    <div class="spinner"></div>
+                    Chargement des disponibilités...
+                </div>
+            `;
+            document.getElementById('confirmModal').classList.add('active');
+
+            // Charger les réservations de la DATE de la réservation (pas la date affichée)
+            const dateReservations = await getReservationsForDate(reservation.date);
+            // Stocker pour utilisation par checkConfirmConflicts et confirmWithTables
+            state.confirmDateReservations = dateReservations;
+
             // Exclure la réservation en cours de confirmation
-            const reservationsForCalc = state.reservations.filter(r => r.id !== reservation.id);
+            const reservationsForCalc = dateReservations.filter(r => r.id !== reservation.id);
             const tableOccupancy = calculateTableOccupancy(reservation.heure, reservationsForCalc);
 
             // Récupérer les tables en buffer (réservation à venir dans les 2h)
             const bufferTables = getBufferTablesAtSlot(reservationsForCalc, reservation.heure);
 
             // Générer le plan des tables avec disposition spatiale
-            const floorGrid = document.getElementById('confirmFloorGrid');
             let html = '';
 
             TABLES_CONFIG.list.forEach(tableNum => {
@@ -2286,7 +2314,7 @@
                     statusClass = 'partielle';
                 } else if (bufferInfo) {
                     statusClass = 'buffer';
-                    statusText = `Réservé à ${bufferInfo.resStart}`;
+                    statusText = `Réservé à ${formatTimeForDisplay(bufferInfo.resStart)}`;
                 }
 
                 html += `
@@ -2305,8 +2333,6 @@
 
             floorGrid.innerHTML = html;
             updateSelectedTablesSummary();
-
-            document.getElementById('confirmModal').classList.add('active');
         }
         
         function toggleConfirmTable(tableNum) {
@@ -2334,14 +2360,14 @@
             const conflicts = detectConflicts(
                 reservation.heure,
                 state.selectedTables,
-                state.reservations,
+                state.confirmDateReservations || [],
                 reservation.id
             );
 
             const alertEl = document.getElementById('confirmConflictAlert');
             if (conflicts.length > 0) {
                 const conflictText = conflicts.map(c =>
-                    `Table ${c.tables.join(', ')} : ${c.type === 'overlap' ? 'occupée par' : 'buffer avec'} ${c.reservation.nom} à ${c.reservation.heure}`
+                    `Table ${c.tables.join(', ')} : ${c.type === 'overlap' ? 'occupée par' : 'buffer avec'} ${c.reservation.nom} à ${formatTimeForDisplay(c.reservation.heure)}`
                 ).join('<br>');
                 document.getElementById('confirmConflictText').innerHTML = conflictText;
                 alertEl.classList.add('visible');
@@ -2378,15 +2404,15 @@
             
             // Double vérification des conflits avant confirmation
             const conflicts = detectConflicts(
-                reservation.heure, 
-                state.selectedTables, 
-                state.reservations, 
+                reservation.heure,
+                state.selectedTables,
+                state.confirmDateReservations || [],
                 reservation.id
             );
             
             if (conflicts.length > 0) {
                 const conflictDetails = conflicts.map(c =>
-                    `Attention : La table ${c.tables.join(', ')} est déjà réservée à ${c.reservation.heure}. Il y a moins de 2 heures entre les deux réservations, ce qui peut ne pas laisser assez de temps aux clients.`
+                    `Attention : La table ${c.tables.join(', ')} est déjà réservée à ${formatTimeForDisplay(c.reservation.heure)}. Il y a moins de 2 heures entre les deux réservations, ce qui peut ne pas laisser assez de temps aux clients.`
                 ).join('\n\n');
 
                 const confirmed = confirm(
@@ -2504,7 +2530,7 @@
                     statusClass = 'partielle';
                 } else if (bufferInfo) {
                     statusClass = 'buffer';
-                    statusText = `Réservé à ${bufferInfo.resStart}`;
+                    statusText = `Réservé à ${formatTimeForDisplay(bufferInfo.resStart)}`;
                 }
 
                 html += `
@@ -2693,7 +2719,7 @@
                     const conflictType = c.type === 'overlap'
                         ? 'chevauchement direct'
                         : 'moins de 2h de marge';
-                    conflictHtml += `<li><strong>Table(s) ${c.tables.join(', ')}</strong> : ${escapeHtml(c.reservation.nom)} à ${c.reservation.heure} (${conflictType})</li>`;
+                    conflictHtml += `<li><strong>Table(s) ${c.tables.join(', ')}</strong> : ${escapeHtml(c.reservation.nom)} à ${formatTimeForDisplay(c.reservation.heure)} (${conflictType})</li>`;
                 });
 
                 conflictHtml += '</ul>';
@@ -2728,7 +2754,7 @@
                 if (conflicts.length > 0) {
                     // Afficher une confirmation si conflit détecté
                     const conflictDetails = conflicts.map(c =>
-                        `Attention : La table ${c.tables.join(', ')} est déjà réservée à ${c.reservation.heure}. Il y a moins de 2 heures entre les deux réservations, ce qui peut ne pas laisser assez de temps aux clients.`
+                        `Attention : La table ${c.tables.join(', ')} est déjà réservée à ${formatTimeForDisplay(c.reservation.heure)}. Il y a moins de 2 heures entre les deux réservations, ce qui peut ne pas laisser assez de temps aux clients.`
                     ).join('\n\n');
 
                     const confirmed = confirm(
@@ -2917,7 +2943,7 @@
                     </div>
                     <div class="reservation-details">
                         ${showDate ? `<span style="font-weight: 500; color: var(--bleu-piaf);">📅 ${formatDisplayDate(r.date)}</span>` : ''}
-                        <span class="reservation-time">🕐 ${r.heure}</span>
+                        <span class="reservation-time">🕐 ${formatTimeForDisplay(r.heure)}</span>
                         ${r.telephone ? `<span>📞 ${escapeHtml(r.telephone)}</span>` : ''}
                         ${r.email ? `<span class="email-container">✉️ ${escapeHtml(r.email)} <button class="btn-copy-email" onclick="event.stopPropagation(); copyEmail('${r.email}')" title="Copier l'email">📋</button></span>` : ''}
                     </div>
@@ -3266,7 +3292,7 @@
                 } else if (bufferInfo) {
                     // Table libre mais dans le buffer (réservation à venir)
                     statusClass = 'buffer';
-                    statusText = `Réservé à ${bufferInfo.resStart}`;
+                    statusText = `Réservé à ${formatTimeForDisplay(bufferInfo.resStart)}`;
                 }
 
                 html += `
@@ -3311,7 +3337,7 @@
                             <div class="table-resa-item">
                                 <div class="table-resa-name">${escapeHtml(r.nom)}</div>
                                 <div class="table-resa-info">
-                                    ${r.heure} - ${r.personnes} personne${r.personnes > 1 ? 's' : ''}<br>
+                                    ${formatTimeForDisplay(r.heure)} - ${r.personnes} personne${r.personnes > 1 ? 's' : ''}<br>
                                     ${r.telephone ? `Tel: ${escapeHtml(r.telephone)}<br>` : ''}
                                     ${r.email ? `<div class="email-container">Email: ${escapeHtml(r.email)} <button class="btn-copy-email" onclick="copyToClipboard('${escapeHtml(r.email)}')" title="Copier l'email">📋</button></div>` : ''}
                                 </div>
@@ -3362,7 +3388,7 @@
                             <button class="table-detail-close" onclick="closeMoveTableModal()">&times;</button>
                         </div>
                         <p style="margin-bottom: 1rem; color: var(--gris-texte);">
-                            Reservation de ${reservation.personnes} personne${reservation.personnes > 1 ? 's' : ''} a ${reservation.heure}
+                            Reservation de ${reservation.personnes} personne${reservation.personnes > 1 ? 's' : ''} a ${formatTimeForDisplay(reservation.heure)}
                         </p>
                         <p style="margin-bottom: 1rem;">Choisir la nouvelle table :</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
