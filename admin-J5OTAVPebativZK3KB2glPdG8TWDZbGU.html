@@ -1996,13 +1996,21 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbzOL1S3lRAXijmMocVHXHxbiZBI8u-nR1NbYfcOK4mB_c1p4uwm0jdojnp_xkpiRwSq/exec';
         const ADMIN_SECRET = 'J5OTAVPebativZK3KB2glPdG8TWDZbGU';
         const OCCUPATION_DURATION = 120; // minutes (2 heures, comme dans le backend)
-        
+
+        // Formate une date en YYYY-MM-DD en heure locale (évite le décalage UTC de toISOString)
+        function formatLocalDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         // ============================================
         // ÉTAT
         // ============================================
-        
+
         let state = {
-            selectedDate: new Date().toISOString().split('T')[0],
+            selectedDate: formatLocalDate(new Date()),
             currentMonth: new Date(),
             reservations: [],
             allPendingReservations: [], // Toutes les demandes en attente (toutes dates)
@@ -3431,7 +3439,7 @@
 
         function renderClosures() {
             const container = document.getElementById('closuresList');
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatLocalDate(new Date());
             const futurClosures = state.closures.filter(c => c.date >= today);
             
             if (futurClosures.length === 0) {
@@ -3495,7 +3503,7 @@
                 html += '<div class="calendar-day"></div>';
             }
             
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatLocalDate(new Date());
             
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -3716,7 +3724,7 @@
                 html += '<div class="calendar-day"></div>';
             }
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = formatLocalDate(new Date());
 
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
