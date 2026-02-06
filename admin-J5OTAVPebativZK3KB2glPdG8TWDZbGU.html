@@ -1932,6 +1932,78 @@
         </div>
     </div>
 
+    <!-- Modal Modifier la réservation (depuis le plan des tables) -->
+    <div class="modal-overlay" id="editReservationModal">
+        <div class="modal">
+            <h2 class="modal-title">Modifier la réservation</h2>
+            <p class="modal-subtitle" id="editReservationSubtitle"></p>
+
+            <div class="form-group">
+                <label>Nombre de personnes</label>
+                <input type="number" id="editResGuests" min="1" max="32" value="2" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-size: 1rem;">
+            </div>
+
+            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+                Créneau horaire :
+            </label>
+
+            <!-- Slider d'heures pour l'édition -->
+            <div class="timeslot-slider-container" id="editResTimeslotContainer">
+                <div class="timeslot-slider-header">
+                    <span class="timeslot-slider-label">Heure</span>
+                    <span class="timeslot-current" id="editResTimeslotCurrent">--:--</span>
+                </div>
+                <div class="timeslot-slider-wrapper">
+                    <input type="range" class="timeslot-slider" id="editResTimeslotSlider"
+                           min="0" max="5" value="0" oninput="onEditResTimeslotChange(this.value)">
+                </div>
+                <div class="timeslot-labels" id="editResTimeslotLabels">
+                </div>
+            </div>
+
+            <!-- Alerte de conflit -->
+            <div class="conflict-alert" id="editResConflictAlert">
+                <div class="conflict-alert-title">⚠️ Conflit détecté</div>
+                <div class="conflict-alert-text" id="editResConflictText"></div>
+            </div>
+
+            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+                Tables :
+            </label>
+
+            <!-- Plan des tables -->
+            <div class="modal-floor-plan" id="editResFloorPlan">
+                <div class="floor-grid" id="editResFloorGrid">
+                    <p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Chargement...</p>
+                </div>
+                <div class="floor-plan-legend">
+                    <div class="legend-item"><span class="legend-color libre"></span> Libre</div>
+                    <div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
+                    <div class="legend-item"><span class="legend-color complete"></span> Complète</div>
+                    <div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
+                    <div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
+                </div>
+            </div>
+
+            <div class="selected-tables-summary">
+                <span>Tables sélectionnées :</span>
+                <span class="tables-list" id="editResSelectedTablesList">Aucune</span>
+            </div>
+
+            <div class="form-group" style="margin-top: 0.5rem;">
+                <label>Remarque</label>
+                <textarea id="editResRemarque" rows="2" placeholder="Ex: Anniversaire, allergie, chaise bébé..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal('editReservationModal')">Annuler</button>
+                <button class="btn btn-confirm" id="editResSaveBtn" onclick="saveEditReservation()">
+                    ✓ Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ============================================
         // CONFIGURATION
@@ -3035,6 +3107,299 @@
         }
 
         // ============================================
+        // MODIFIER UNE RÉSERVATION (depuis le plan des tables)
+        // ============================================
+
+        let editResReservation = null;
+        let editResAvailableTimeslots = [];
+        let editResSelectedTimeslot = null;
+        let editResSelectedTables = new Set();
+        let editResDateReservations = [];
+
+        async function openEditReservationModal(reservationId) {
+            closeTableDetail();
+
+            const reservation = state.reservations.find(r => r.id === reservationId);
+            if (!reservation) return;
+
+            editResReservation = reservation;
+            editResSelectedTables = new Set();
+
+            // Pré-sélectionner les tables actuelles
+            if (reservation.tables) {
+                String(reservation.tables).split(',').forEach(t => {
+                    editResSelectedTables.add(parseInt(t.trim()));
+                });
+            }
+
+            document.getElementById('editReservationSubtitle').textContent =
+                `Réservation de ${reservation.nom}`;
+            document.getElementById('editResGuests').value = reservation.personnes;
+            document.getElementById('editResRemarque').value = reservation.remarque || '';
+
+            // Charger les réservations pour la date
+            editResDateReservations = await getReservationsForDate(reservation.date);
+
+            // Initialiser le slider de créneaux
+            initEditResTimeslotSlider(reservation);
+
+            document.getElementById('editReservationModal').classList.add('active');
+        }
+
+        function initEditResTimeslotSlider(reservation) {
+            const date = new Date(reservation.date);
+            const dayOfWeek = date.getDay();
+            const schedule = SCHEDULE[dayOfWeek];
+            const container = document.getElementById('editResTimeslotContainer');
+            const slider = document.getElementById('editResTimeslotSlider');
+            const labelsContainer = document.getElementById('editResTimeslotLabels');
+
+            if (!schedule || !schedule.open || !schedule.slots || schedule.slots.length === 0) {
+                container.classList.remove('visible');
+                editResAvailableTimeslots = [];
+                editResSelectedTimeslot = null;
+                return;
+            }
+
+            editResAvailableTimeslots = schedule.slots;
+            container.classList.add('visible');
+
+            slider.min = 0;
+            slider.max = editResAvailableTimeslots.length - 1;
+
+            labelsContainer.innerHTML = editResAvailableTimeslots.map((slot, index) =>
+                `<span class="timeslot-label" data-index="${index}">${slot}</span>`
+            ).join('');
+
+            // Trouver le créneau le plus proche de l'heure actuelle de la réservation
+            const reservationMinutes = timeToMinutes(reservation.heure);
+            let closestIndex = 0;
+            let minDiff = Infinity;
+            editResAvailableTimeslots.forEach((slot, index) => {
+                const diff = Math.abs(timeToMinutes(slot) - reservationMinutes);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = index;
+                }
+            });
+
+            slider.value = closestIndex;
+            editResSelectedTimeslot = editResAvailableTimeslots[closestIndex];
+            document.getElementById('editResTimeslotCurrent').textContent = editResSelectedTimeslot;
+
+            document.querySelectorAll('#editResTimeslotLabels .timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === closestIndex);
+            });
+
+            renderEditResFloorPlan();
+        }
+
+        function onEditResTimeslotChange(value) {
+            const index = parseInt(value);
+            if (index < 0 || index >= editResAvailableTimeslots.length) return;
+
+            editResSelectedTimeslot = editResAvailableTimeslots[index];
+            document.getElementById('editResTimeslotCurrent').textContent = editResSelectedTimeslot;
+
+            document.querySelectorAll('#editResTimeslotLabels .timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === index);
+            });
+
+            renderEditResFloorPlan();
+        }
+
+        function renderEditResFloorPlan() {
+            const floorGrid = document.getElementById('editResFloorGrid');
+            const reservationsToUse = editResDateReservations || [];
+            const timeslot = editResSelectedTimeslot;
+
+            if (!timeslot) return;
+
+            const slotMinutes = timeToMinutes(timeslot);
+            const slotReservations = reservationsToUse.filter(r => {
+                if (r.statut !== 'confirmée') return false;
+                if (!r.tables || !r.heure) return false;
+                if (r.id === editResReservation.id) return false; // exclure la réservation en cours d'édition
+                const resStart = timeToMinutes(r.heure);
+                const resEnd = resStart + OCCUPATION_DURATION;
+                return (slotMinutes >= resStart && slotMinutes < resEnd);
+            });
+
+            const bufferTables = getBufferTablesAtSlot(
+                reservationsToUse.filter(r => r.id !== editResReservation.id),
+                timeslot
+            );
+
+            const tableInfo = new Map();
+            slotReservations.forEach(r => {
+                String(r.tables).split(',').forEach(t => {
+                    const tableNum = parseInt(t.trim());
+                    if (!tableInfo.has(tableNum)) {
+                        tableInfo.set(tableNum, []);
+                    }
+                    tableInfo.get(tableNum).push(r);
+                });
+            });
+
+            let html = '';
+
+            TABLES_CONFIG.list.forEach(tableNum => {
+                const capacity = TABLES_CONFIG.capacity[tableNum];
+                const resForTable = tableInfo.get(tableNum) || [];
+                const isSelected = editResSelectedTables.has(tableNum);
+                const bufferInfo = bufferTables.get(tableNum);
+
+                let placesOccupees = 0;
+                resForTable.forEach(r => {
+                    const tablesUtilisees = String(r.tables).split(',').map(t => parseInt(t.trim()));
+                    if (tablesUtilisees.length > 1) {
+                        const capaciteTotale = tablesUtilisees.reduce((sum, t) => sum + TABLES_CONFIG.capacity[t], 0);
+                        placesOccupees += Math.ceil(r.personnes * (capacity / capaciteTotale));
+                    } else {
+                        placesOccupees += parseInt(r.personnes);
+                    }
+                });
+                placesOccupees = Math.min(placesOccupees, capacity);
+                const placesLibres = capacity - placesOccupees;
+
+                let statusClass = 'libre';
+                let statusText = `${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}`;
+                if (placesOccupees >= capacity) {
+                    statusClass = 'complete';
+                } else if (placesOccupees > 0) {
+                    statusClass = 'partielle';
+                } else if (bufferInfo) {
+                    statusClass = 'buffer';
+                    statusText = `Réservé à ${formatTimeForDisplay(bufferInfo.resStart)}`;
+                }
+
+                html += `
+                    <div class="table-item table-${tableNum} ${statusClass} ${isSelected ? 'selected' : ''}"
+                         data-table="${tableNum}"
+                         onclick="toggleEditResTable(${tableNum})">
+                        <span class="table-number">${tableNum}</span>
+                        <span class="table-capacity">${capacity} places</span>
+                        <span class="table-places">${statusText}</span>
+                    </div>
+                `;
+            });
+
+            html += '<div class="floor-separator"></div>';
+            floorGrid.innerHTML = html;
+            updateEditResTablesSummary();
+            checkEditResConflicts();
+        }
+
+        function toggleEditResTable(tableNum) {
+            const el = document.querySelector(`#editResFloorGrid .table-item[data-table="${tableNum}"]`);
+
+            if (editResSelectedTables.has(tableNum)) {
+                editResSelectedTables.delete(tableNum);
+                el.classList.remove('selected');
+            } else {
+                editResSelectedTables.add(tableNum);
+                el.classList.add('selected');
+            }
+
+            updateEditResTablesSummary();
+            checkEditResConflicts();
+        }
+
+        function updateEditResTablesSummary() {
+            const list = document.getElementById('editResSelectedTablesList');
+
+            if (editResSelectedTables.size === 0) {
+                list.textContent = 'Aucune';
+            } else {
+                const tables = Array.from(editResSelectedTables).sort((a, b) => a - b);
+                list.textContent = tables.map(t => `Table ${t}`).join(', ');
+            }
+        }
+
+        function checkEditResConflicts() {
+            if (!editResReservation || editResSelectedTables.size === 0) {
+                document.getElementById('editResConflictAlert').classList.remove('visible');
+                return;
+            }
+
+            const conflicts = detectConflicts(
+                editResSelectedTimeslot,
+                editResSelectedTables,
+                editResDateReservations || [],
+                editResReservation.id
+            );
+
+            const alertEl = document.getElementById('editResConflictAlert');
+            if (conflicts.length > 0) {
+                const conflictText = conflicts.map(c =>
+                    `Table ${c.tables.join(', ')} : ${c.type === 'overlap' ? 'occupée par' : 'buffer avec'} ${c.reservation.nom} à ${formatTimeForDisplay(c.reservation.heure)}`
+                ).join('<br>');
+                document.getElementById('editResConflictText').innerHTML = conflictText;
+                alertEl.classList.add('visible');
+            } else {
+                alertEl.classList.remove('visible');
+            }
+        }
+
+        async function saveEditReservation() {
+            if (!editResReservation) return;
+
+            const newGuests = parseInt(document.getElementById('editResGuests').value);
+            if (!newGuests || newGuests < 1 || newGuests > 32) {
+                showToast('Nombre de personnes invalide (1-32)', 'error');
+                return;
+            }
+
+            if (editResSelectedTables.size === 0) {
+                showToast('Veuillez sélectionner au moins une table', 'error');
+                return;
+            }
+
+            const newTables = Array.from(editResSelectedTables).sort((a, b) => a - b).join(', ');
+            const newHeure = editResSelectedTimeslot;
+            const newRemarque = document.getElementById('editResRemarque').value.trim();
+
+            // Vérifier les conflits
+            const conflicts = detectConflicts(
+                newHeure,
+                editResSelectedTables,
+                editResDateReservations || [],
+                editResReservation.id
+            );
+
+            if (conflicts.length > 0) {
+                const conflictDetails = conflicts.map(c =>
+                    `Table ${c.tables.join(', ')} : ${c.type === 'overlap' ? 'occupée par' : 'buffer avec'} ${c.reservation.nom} à ${formatTimeForDisplay(c.reservation.heure)}`
+                ).join('\n');
+
+                if (!confirm(`Conflits détectés :\n${conflictDetails}\n\nVoulez-vous quand même enregistrer ?`)) {
+                    return;
+                }
+            }
+
+            const result = await apiCall('updateReservation', {
+                id: editResReservation.id
+            }, {
+                heure: newHeure,
+                personnes: newGuests,
+                tables: newTables,
+                remarque: newRemarque
+            });
+
+            closeModal('editReservationModal');
+
+            if (result.success) {
+                showToast('Réservation mise à jour', 'success');
+                // Invalider le cache pour la date concernée
+                delete state.reservationsCache[editResReservation.date];
+                loadDashboard();
+                loadAllPendingReservations();
+            } else {
+                showToast('Erreur: ' + result.error, 'error');
+            }
+        }
+
+        // ============================================
         // RÉSERVATIONS
         // ============================================
 
@@ -3485,9 +3850,10 @@
                                     ${formatTimeForDisplay(r.heure)} - ${r.personnes} personne${r.personnes > 1 ? 's' : ''}<br>
                                     ${r.telephone ? `Tel: ${escapeHtml(r.telephone)}<br>` : ''}
                                     ${r.email ? `<div class="email-container">Email: ${escapeHtml(r.email)} <button class="btn-copy-email" onclick="copyToClipboard('${escapeHtml(r.email)}')" title="Copier l'email">📋</button></div>` : ''}
+                                    ${r.remarque ? `<div style="color: var(--bleu-piaf); font-size: 0.85rem; margin-top: 0.25rem;">📝 ${escapeHtml(r.remarque)}</div>` : ''}
                                 </div>
-                                <button class="move-table-btn" onclick="openMoveTableModal('${r.id}', ${tableNum})">
-                                    Changer de table
+                                <button class="move-table-btn" onclick="openEditReservationModal('${r.id}')" style="background: var(--bleu-piaf); color: white;">
+                                    ✎ Modifier la réservation
                                 </button>
                             </div>
                         `).join('')}
