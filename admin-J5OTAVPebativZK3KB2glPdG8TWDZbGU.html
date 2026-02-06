@@ -1697,6 +1697,20 @@
                 Plan des tables :
             </label>
 
+            <!-- Slider d'heures pour la popup de confirmation -->
+            <div class="timeslot-slider-container" id="confirmTimeslotSliderContainer">
+                <div class="timeslot-slider-header">
+                    <span class="timeslot-slider-label">Créneau horaire</span>
+                    <span class="timeslot-current" id="confirmTimeslotCurrent">--:--</span>
+                </div>
+                <div class="timeslot-slider-wrapper">
+                    <input type="range" class="timeslot-slider" id="confirmTimeslotSlider"
+                           min="0" max="5" value="0" oninput="onConfirmTimeslotSliderChange(this.value)">
+                </div>
+                <div class="timeslot-labels" id="confirmTimeslotLabels">
+                </div>
+            </div>
+
             <!-- Alerte de conflit -->
             <div class="conflict-alert" id="confirmConflictAlert">
                 <div class="conflict-alert-title">⚠️ Conflit détecté</div>
@@ -2254,7 +2268,10 @@
         // ============================================
         // MODAL DE CONFIRMATION AVEC SÉLECTION DE TABLES
         // ============================================
-        
+
+        let confirmAvailableTimeslots = [];
+        let confirmSelectedTimeslot = null;
+
         async function openConfirmModal(reservation) {
             state.pendingConfirmId = reservation.id;
             state.pendingConfirmReservation = reservation;
@@ -2283,27 +2300,109 @@
             `;
             document.getElementById('confirmModal').classList.add('active');
 
-            // Déterminer les données et le créneau à utiliser
-            // Si même date que le plan principal : synchroniser avec le plan affiché
-            // Sinon : charger les réservations de la date de la réservation
+            // Charger les réservations de la date de la réservation
             const isSameDate = reservation.date === state.selectedDate;
-            let reservationsToUse;
-            let timeslot;
+            const reservationsToUse = isSameDate
+                ? state.reservations
+                : await getReservationsForDate(reservation.date);
 
-            if (isSameDate && selectedTimeslot) {
-                reservationsToUse = state.reservations;
-                timeslot = selectedTimeslot;
-            } else {
-                reservationsToUse = await getReservationsForDate(reservation.date);
-                timeslot = reservation.heure;
-            }
-
-            // Stocker pour utilisation par checkConfirmConflicts et confirmWithTables
+            // Stocker pour utilisation par checkConfirmConflicts, confirmWithTables et le slider
             state.confirmDateReservations = reservationsToUse;
 
-            // === Même logique que renderTables() pour un affichage identique ===
+            // Initialiser le slider avec les créneaux de la date de la réservation
+            // et le positionner par défaut sur l'heure de la réservation
+            initConfirmTimeslotSlider(reservation);
 
-            // Récupérer les réservations confirmées actives au créneau
+            // Le rendu initial du plan est fait par initConfirmTimeslotSlider via renderConfirmFloorPlan
+        }
+
+        /**
+         * Initialise le slider d'heures dans le modal de confirmation.
+         * Le créneau par défaut est celui le plus proche de l'heure de la réservation.
+         */
+        function initConfirmTimeslotSlider(reservation) {
+            const date = new Date(reservation.date);
+            const dayOfWeek = date.getDay();
+            const schedule = SCHEDULE[dayOfWeek];
+            const container = document.getElementById('confirmTimeslotSliderContainer');
+            const slider = document.getElementById('confirmTimeslotSlider');
+            const labelsContainer = document.getElementById('confirmTimeslotLabels');
+
+            // Si le jour est fermé ou pas de créneaux
+            if (!schedule || !schedule.open || !schedule.slots || schedule.slots.length === 0) {
+                container.classList.remove('visible');
+                confirmAvailableTimeslots = [];
+                confirmSelectedTimeslot = null;
+                return;
+            }
+
+            confirmAvailableTimeslots = schedule.slots;
+            container.classList.add('visible');
+
+            // Configurer le slider
+            slider.min = 0;
+            slider.max = confirmAvailableTimeslots.length - 1;
+
+            // Générer les labels
+            labelsContainer.innerHTML = confirmAvailableTimeslots.map((slot, index) =>
+                `<span class="timeslot-label" data-index="${index}">${slot}</span>`
+            ).join('');
+
+            // Trouver le créneau le plus proche de l'heure de la réservation
+            const reservationMinutes = timeToMinutes(reservation.heure);
+            let closestIndex = 0;
+            let minDiff = Infinity;
+            confirmAvailableTimeslots.forEach((slot, index) => {
+                const diff = Math.abs(timeToMinutes(slot) - reservationMinutes);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = index;
+                }
+            });
+
+            slider.value = closestIndex;
+            confirmSelectedTimeslot = confirmAvailableTimeslots[closestIndex];
+            document.getElementById('confirmTimeslotCurrent').textContent = confirmSelectedTimeslot;
+
+            // Mettre à jour les labels actifs
+            document.querySelectorAll('#confirmTimeslotLabels .timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === closestIndex);
+            });
+
+            // Rendre le plan des tables pour ce créneau
+            renderConfirmFloorPlan();
+        }
+
+        /**
+         * Appelé quand le slider du modal de confirmation change
+         */
+        function onConfirmTimeslotSliderChange(value) {
+            const index = parseInt(value);
+            if (index < 0 || index >= confirmAvailableTimeslots.length) return;
+
+            confirmSelectedTimeslot = confirmAvailableTimeslots[index];
+
+            document.getElementById('confirmTimeslotCurrent').textContent = confirmSelectedTimeslot;
+
+            document.querySelectorAll('#confirmTimeslotLabels .timeslot-label').forEach((label, i) => {
+                label.classList.toggle('active', i === index);
+            });
+
+            renderConfirmFloorPlan();
+        }
+
+        /**
+         * Rend le plan des tables dans le modal de confirmation
+         * Utilise exactement la même logique que renderTables()
+         */
+        function renderConfirmFloorPlan() {
+            const floorGrid = document.getElementById('confirmFloorGrid');
+            const reservationsToUse = state.confirmDateReservations || [];
+            const timeslot = confirmSelectedTimeslot;
+
+            if (!timeslot) return;
+
+            // Récupérer les réservations confirmées actives au créneau (même logique que renderTables)
             const slotMinutes = timeToMinutes(timeslot);
             const slotReservations = reservationsToUse.filter(r => {
                 if (r.statut !== 'confirmée') return false;
