@@ -301,6 +301,17 @@ function handleRequest(e) {
         }
         break;
 
+      // Modifier une réservation (heure, personnes, tables, remarque)
+      case 'updateReservation':
+        if (!checkAdminAccess(params.secret)) {
+          result = { success: false, error: 'Accès refusé' };
+        } else {
+          let updateData = {};
+          try { updateData = JSON.parse(e.postData.contents); } catch (err) {}
+          result = updateReservation(params.id, updateData);
+        }
+        break;
+
       // NOUVEAU: Nettoyage manuel des réservations expirées
       case 'cleanupExpiredReservations':
         if (!checkAdminAccess(params.secret)) {
@@ -940,6 +951,54 @@ function updateReservationRemarque(id, newRemarque) {
         success: true,
         message: 'Remarque mise à jour',
         remarque: newRemarque
+      };
+    }
+  }
+
+  return { success: false, error: 'Réservation non trouvée' };
+}
+
+/**
+ * Met à jour une réservation (heure, personnes, tables, remarque)
+ */
+function updateReservation(id, data) {
+  if (!id) {
+    return { success: false, error: 'ID manquant' };
+  }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('Reservations');
+  const rows = sheet.getDataRange().getValues();
+  const idStr = String(id);
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][0]) === idStr) {
+      const updated = [];
+
+      if (data.heure !== undefined && data.heure !== null) {
+        sheet.getRange(i + 1, 3).setValue(data.heure);
+        updated.push('heure');
+      }
+      if (data.personnes !== undefined && data.personnes !== null) {
+        const p = parseInt(data.personnes);
+        if (p < 1 || p > 32) return { success: false, error: 'Nombre de personnes invalide (1-32)' };
+        sheet.getRange(i + 1, 4).setValue(p);
+        updated.push('personnes');
+      }
+      if (data.tables !== undefined && data.tables !== null) {
+        sheet.getRange(i + 1, 10).setValue(data.tables);
+        updated.push('tables');
+      }
+      if (data.remarque !== undefined) {
+        sheet.getRange(i + 1, 13).setValue(data.remarque);
+        updated.push('remarque');
+      }
+
+      Logger.log('Réservation ' + id + ' mise à jour: ' + updated.join(', '));
+      return {
+        success: true,
+        message: 'Réservation mise à jour',
+        updated: updated
       };
     }
   }
