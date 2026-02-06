@@ -859,74 +859,6 @@
         .btn-add-green { background: var(--bleu-piaf); color: var(--blanc); }
 
         /* Sélecteur de tables dans le modal */
-        .table-selector {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.75rem;
-            margin: 1rem 0;
-        }
-
-        .table-select-item {
-            aspect-ratio: 1;
-            background: var(--gris-fond);
-            border: 3px solid var(--gris-bordure);
-            border-radius: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .table-select-item:hover:not(.unavailable) {
-            border-color: var(--bleu-piaf);
-            transform: scale(1.05);
-        }
-
-        .table-select-item.selected {
-            border-color: var(--bleu-piaf);
-            background: rgba(42, 53, 147, 0.15);
-        }
-
-        .table-select-item.selected::after {
-            content: '✓';
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: var(--bleu-piaf);
-            color: white;
-            width: 18px;
-            height: 18px;
-            border-radius: 0;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .table-select-item.unavailable {
-            opacity: 0.4;
-            cursor: not-allowed;
-            background: var(--gris-bordure);
-        }
-
-        .table-select-item .table-number {
-            font-size: 1.5rem;
-        }
-
-        .table-select-item .table-info {
-            font-size: 0.7rem;
-            color: var(--gris-texte);
-            text-align: center;
-            margin-top: 0.25rem;
-        }
-
-        .table-select-item.unavailable .table-info {
-            color: var(--rouge);
-        }
-
         /* Mini plan des tables dans le modal */
         .modal-floor-plan {
             background: var(--blanc);
@@ -1089,18 +1021,6 @@
 
         .conflict-list li {
             margin-bottom: 0.25rem;
-        }
-
-        /* Loading dans le sélecteur de tables */
-        .table-selector-loading {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 2rem;
-            color: var(--gris-texte);
-        }
-
-        .table-selector-loading .spinner {
-            margin: 0 auto 0.5rem;
         }
 
         .tables-hint {
@@ -1484,11 +1404,6 @@
                 grid-template-columns: 1fr;
             }
 
-            .table-selector {
-                grid-template-columns: repeat(4, 1fr);
-                gap: 0.5rem;
-            }
-
             /* Contenu principal */
             .main-content {
                 padding: 1rem;
@@ -1513,10 +1428,6 @@
         @media (max-width: 480px) {
             /* Très petits écrans */
             .tables-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .table-selector {
                 grid-template-columns: repeat(2, 1fr);
             }
 
@@ -1783,10 +1694,29 @@
             </div>
             
             <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
-                Sélectionnez les tables :
+                Plan des tables :
             </label>
-            <div class="table-selector" id="tableSelector"></div>
-            
+
+            <!-- Alerte de conflit -->
+            <div class="conflict-alert" id="confirmConflictAlert">
+                <div class="conflict-alert-title">⚠️ Conflit détecté</div>
+                <div class="conflict-alert-text" id="confirmConflictText"></div>
+            </div>
+
+            <!-- Plan des tables avec disposition spatiale -->
+            <div class="modal-floor-plan" id="confirmFloorPlan">
+                <div class="floor-grid" id="confirmFloorGrid">
+                    <p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Chargement...</p>
+                </div>
+                <div class="floor-plan-legend">
+                    <div class="legend-item"><span class="legend-color libre"></span> Libre</div>
+                    <div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
+                    <div class="legend-item"><span class="legend-color complete"></span> Complète</div>
+                    <div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
+                    <div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
+                </div>
+            </div>
+
             <div class="selected-tables-summary">
                 <span>Tables sélectionnées :</span>
                 <span class="tables-list" id="selectedTablesList">Aucune</span>
@@ -2314,52 +2244,74 @@
             state.pendingConfirmId = reservation.id;
             state.pendingConfirmReservation = reservation;
             state.selectedTables = new Set();
-            
+
             const guests = parseInt(reservation.personnes);
             const tablesNeeded = guests <= 4 ? 1 : 2;
-            
-            document.getElementById('confirmModalSubtitle').textContent = 
+
+            document.getElementById('confirmModalSubtitle').textContent =
                 `Réservation de ${reservation.nom}`;
             document.getElementById('guestsCount').textContent = guests;
             document.getElementById('reservationTime').textContent = reservation.heure;
-            document.getElementById('tablesNeeded').textContent = 
+            document.getElementById('tablesNeeded').textContent =
                 tablesNeeded === 1 ? '1 table requise' : '2 tables requises';
-            
-            // Trouver les tables occupées à ce créneau (utilise les réservations du jour affiché)
-            const occupiedTables = getOccupiedTablesAtTime(reservation.heure, state.reservations, reservation.id);
-            
-            // Générer le sélecteur de tables
-            const selector = document.getElementById('tableSelector');
+
+            // Cacher l'alerte de conflit
+            document.getElementById('confirmConflictAlert').classList.remove('visible');
+
+            // Calculer l'occupation des tables à l'heure de la réservation
+            // Exclure la réservation en cours de confirmation
+            const reservationsForCalc = state.reservations.filter(r => r.id !== reservation.id);
+            const tableOccupancy = calculateTableOccupancy(reservation.heure, reservationsForCalc);
+
+            // Récupérer les tables en buffer (réservation à venir dans les 2h)
+            const bufferTables = getBufferTablesAtSlot(reservationsForCalc, reservation.heure);
+
+            // Générer le plan des tables avec disposition spatiale
+            const floorGrid = document.getElementById('confirmFloorGrid');
             let html = '';
 
-            for (const tableNum of TABLES_CONFIG.list) {
-                const occupied = occupiedTables.get(tableNum);
-                const isUnavailable = !!occupied;
-                const capacity = TABLES_CONFIG.capacity[tableNum] || 2;
+            TABLES_CONFIG.list.forEach(tableNum => {
+                const capacity = TABLES_CONFIG.capacity[tableNum];
+                const occupancy = tableOccupancy.get(tableNum) || { placesOccupees: 0, reservations: [] };
+                const placesLibres = capacity - occupancy.placesOccupees;
+                const isSelected = state.selectedTables.has(tableNum);
+                const bufferInfo = bufferTables.get(tableNum);
+
+                // Déterminer le statut (couleur)
+                let statusClass = 'libre';
+                let statusText = `${placesLibres}/${capacity} libre${placesLibres > 1 ? 's' : ''}`;
+                if (occupancy.placesOccupees >= capacity) {
+                    statusClass = 'complete';
+                } else if (occupancy.placesOccupees > 0) {
+                    statusClass = 'partielle';
+                } else if (bufferInfo) {
+                    statusClass = 'buffer';
+                    statusText = `Réservé à ${bufferInfo.resStart}`;
+                }
 
                 html += `
-                    <div class="table-select-item ${isUnavailable ? 'unavailable' : ''}"
+                    <div class="table-item table-${tableNum} ${statusClass} ${isSelected ? 'selected' : ''}"
                          data-table="${tableNum}"
-                         onclick="${isUnavailable ? '' : `toggleTable(${tableNum})`}">
+                         onclick="toggleConfirmTable(${tableNum})">
                         <span class="table-number">${tableNum}</span>
-                        <span class="table-info">
-                            ${isUnavailable
-                                ? `${occupied.reservation.nom}<br>${occupied.start}`
-                                : `${capacity} places`}
-                        </span>
+                        <span class="table-capacity">${capacity} places</span>
+                        <span class="table-places">${statusText}</span>
                     </div>
                 `;
-            }
-            
-            selector.innerHTML = html;
+            });
+
+            // Ajouter le séparateur entre les zones
+            html += '<div class="floor-separator"></div>';
+
+            floorGrid.innerHTML = html;
             updateSelectedTablesSummary();
-            
+
             document.getElementById('confirmModal').classList.add('active');
         }
         
-        function toggleTable(tableNum) {
-            const el = document.querySelector(`#tableSelector .table-select-item[data-table="${tableNum}"]`);
-            
+        function toggleConfirmTable(tableNum) {
+            const el = document.querySelector(`#confirmFloorGrid .table-item[data-table="${tableNum}"]`);
+
             if (state.selectedTables.has(tableNum)) {
                 state.selectedTables.delete(tableNum);
                 el.classList.remove('selected');
@@ -2367,8 +2319,35 @@
                 state.selectedTables.add(tableNum);
                 el.classList.add('selected');
             }
-            
+
             updateSelectedTablesSummary();
+            checkConfirmConflicts();
+        }
+
+        function checkConfirmConflicts() {
+            const reservation = state.pendingConfirmReservation;
+            if (!reservation || state.selectedTables.size === 0) {
+                document.getElementById('confirmConflictAlert').classList.remove('visible');
+                return;
+            }
+
+            const conflicts = detectConflicts(
+                reservation.heure,
+                state.selectedTables,
+                state.reservations,
+                reservation.id
+            );
+
+            const alertEl = document.getElementById('confirmConflictAlert');
+            if (conflicts.length > 0) {
+                const conflictText = conflicts.map(c =>
+                    `Table ${c.tables.join(', ')} : ${c.type === 'overlap' ? 'occupée par' : 'buffer avec'} ${c.reservation.nom} à ${c.reservation.heure}`
+                ).join('<br>');
+                document.getElementById('confirmConflictText').innerHTML = conflictText;
+                alertEl.classList.add('visible');
+            } else {
+                alertEl.classList.remove('visible');
+            }
         }
         
         function updateSelectedTablesSummary() {
