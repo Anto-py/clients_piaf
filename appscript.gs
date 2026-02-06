@@ -1341,7 +1341,29 @@ function removeDailyEmailTrigger() {
 }
 
 function formatDateDisplay(dateStr, lang) {
-  const date = new Date(dateStr);
-  const locales = { fr: 'fr-FR', en: 'en-GB', nl: 'nl-NL' };
-  return date.toLocaleDateString(locales[lang] || 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const TIMEZONE = 'Europe/Brussels';
+  // Ajouter T12:00:00 pour éviter les décalages de jour liés au parsing UTC de minuit
+  const date = new Date(dateStr + 'T12:00:00');
+
+  const dayOfWeek = parseInt(Utilities.formatDate(date, TIMEZONE, 'u')); // 1=lundi ... 7=dimanche
+  const dayNum = Utilities.formatDate(date, TIMEZONE, 'd');
+  const monthIndex = parseInt(Utilities.formatDate(date, TIMEZONE, 'M')) - 1;
+
+  const days = {
+    fr: ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'],
+    en: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    nl: ['maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag', 'zondag']
+  };
+
+  const months = {
+    fr: ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
+    en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    nl: ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december']
+  };
+
+  const l = lang || 'fr';
+  const dayName = (days[l] || days['fr'])[dayOfWeek - 1];
+  const monthName = (months[l] || months['fr'])[monthIndex];
+
+  return dayName + ' ' + dayNum + ' ' + monthName;
 }
