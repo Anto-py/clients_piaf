@@ -2288,12 +2288,13 @@
             // Stocker pour utilisation par checkConfirmConflicts et confirmWithTables
             state.confirmDateReservations = dateReservations;
 
-            // Exclure la réservation en cours de confirmation
-            const reservationsForCalc = dateReservations.filter(r => r.id !== reservation.id);
-            const tableOccupancy = calculateTableOccupancy(reservation.heure, reservationsForCalc);
+            // Pour l'affichage du plan : inclure TOUTES les réservations non-refusées
+            // (y compris en attente avec tables assignées et la réservation en cours)
+            // pour refléter l'état réel des tables, identique au plan principal
+            const tableOccupancy = calculateTableOccupancy(reservation.heure, dateReservations, true);
 
             // Récupérer les tables en buffer (réservation à venir dans les 2h)
-            const bufferTables = getBufferTablesAtSlot(reservationsForCalc, reservation.heure);
+            const bufferTables = getBufferTablesAtSlot(dateReservations, reservation.heure);
 
             // Générer le plan des tables avec disposition spatiale
             let html = '';
@@ -2628,14 +2629,19 @@
          * Retourne une Map: tableNum -> { placesOccupees, reservations }
          * Utilise la même logique que getReservationsForSlot() pour la cohérence
          */
-        function calculateTableOccupancy(timeStr, reservations) {
+        function calculateTableOccupancy(timeStr, reservations, includeAllStatuses = false) {
             const tableOccupancy = new Map();
             const slotMinutes = timeToMinutes(timeStr);
 
-            // Filtrer les réservations confirmées EN COURS au créneau sélectionné
-            // (même logique que getReservationsForSlot dans renderTables)
+            // Filtrer les réservations EN COURS au créneau sélectionné
+            // Par défaut: uniquement confirmées (pour le plan principal et le modal manuel)
+            // Avec includeAllStatuses: toutes sauf refusées (pour le modal de confirmation)
             const relevantReservations = reservations.filter(r => {
-                if (r.statut !== 'confirmée' || !r.tables || !r.heure) return false;
+                if (includeAllStatuses) {
+                    if (r.statut === 'refusée' || !r.tables || !r.heure) return false;
+                } else {
+                    if (r.statut !== 'confirmée' || !r.tables || !r.heure) return false;
+                }
                 const resStart = timeToMinutes(r.heure);
                 const resEnd = resStart + OCCUPATION_DURATION;
                 // Le créneau est-il pendant l'occupation de cette réservation ?
