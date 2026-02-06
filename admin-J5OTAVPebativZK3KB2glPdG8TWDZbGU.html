@@ -3525,6 +3525,9 @@
             // Vider les réservations de l'ancienne date pour éviter d'afficher de mauvaises données
             state.reservations = [];
 
+            // Mettre à jour immédiatement le DOM pour ne pas afficher les anciennes réservations
+            document.getElementById('allReservations').innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
+
             renderCalendar();
 
             // Réinitialiser le slider pour le nouveau jour
@@ -3737,6 +3740,9 @@
 
             // Vider les réservations de l'ancienne date
             state.reservations = [];
+
+            // Mettre à jour immédiatement le DOM pour ne pas afficher les anciennes réservations
+            document.getElementById('allReservations').innerHTML = '<div class="loading"><div class="spinner"></div>Chargement...</div>';
 
             updateMobileCalendar();
             renderCalendar();
