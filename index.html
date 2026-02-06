@@ -958,6 +958,14 @@
             END_DATE: new Date(2026, 5, 30)     // 30 juin 2026
         };
 
+        // Formate une date en YYYY-MM-DD en heure locale (évite le décalage UTC de toISOString)
+        function formatLocalDate(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
         // Horaires pour affichage local (fallback)
         const schedule = {
             0: { open: true, services: [{ label: 'Brunch', start: '11:00', end: '15:30', slots: ['11:00', '11:30', '12:30', '13:00', '13:30'] }] },  // Dimanche
@@ -1219,7 +1227,7 @@
                 `;
 
                 if (isOpen) {
-                    div.dataset.date = date.toISOString().split('T')[0];
+                    div.dataset.date = formatLocalDate(date);
                     div.dataset.day = dayOfWeek;
                     div.onclick = () => selectDate(div);
                 }
