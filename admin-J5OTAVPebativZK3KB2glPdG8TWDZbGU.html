@@ -1679,8 +1679,6 @@
                 </div>
             </div>
 
-            <h2 class="section-title" style="margin-top: 2rem;">Confirmées aujourd'hui</h2>
-            <div class="pending-list" id="confirmedList"></div>
         </aside>
     </div>
 
@@ -2123,7 +2121,6 @@
                 document.getElementById('statGuests').textContent = data.stats?.totalGuests || 0;
 
                 renderPendingList();
-                renderConfirmedList();
                 renderAllReservations();
                 renderTables();
                 updateDateTitle();
@@ -2133,7 +2130,6 @@
                 showToast('Erreur: ' + (data.error || 'Synchronisation échouée'), 'error');
 
                 // Afficher un message d'erreur dans les listes
-                document.getElementById('confirmedList').innerHTML = '';
                 document.getElementById('allReservations').innerHTML = '';
             }
         }
@@ -2900,18 +2896,6 @@
 
             // Afficher avec la date car les réservations peuvent être de différentes dates
             container.innerHTML = pending.map(r => renderReservationCard(r, true, true)).join('');
-        }
-
-        function renderConfirmedList() {
-            const container = document.getElementById('confirmedList');
-            const confirmed = state.reservations.filter(r => r.statut === 'confirmée');
-            
-            if (confirmed.length === 0) {
-                container.innerHTML = `<p style="color: var(--gris); text-align: center;">Aucune réservation confirmée</p>`;
-                return;
-            }
-            
-            container.innerHTML = confirmed.map(r => renderReservationCard(r, false)).join('');
         }
 
         function renderAllReservations() {
