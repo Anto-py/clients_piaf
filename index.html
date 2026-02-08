@@ -1019,6 +1019,7 @@
                 'error.generic': 'Une erreur est survenue. Veuillez réessayer.',
                 'error.slotUnavailable': 'Ce créneau n\'est plus disponible. Veuillez en choisir un autre.',
                 'error.fullyBooked': 'Nous sommes désolés mais nous sommes complets pour cette date, nous vous accueillerons avec plaisir à une autre date.',
+                'error.dayBlocked': 'Désolé, les réservations sont clôturées pour ce jour... Mais nous gardons toujours quelques tables libres pour les gens du quartier si vous voulez tenter votre chance\u00a0!',
                 'closed': 'Fermé',
                 'days': ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
                 'months': ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'],
@@ -1059,6 +1060,7 @@
                 'error.generic': 'An error occurred. Please try again.',
                 'error.slotUnavailable': 'This slot is no longer available. Please choose another one.',
                 'error.fullyBooked': 'We are sorry but we are fully booked for this date, we would be happy to welcome you on another date.',
+                'error.dayBlocked': 'Sorry, reservations are closed for this day... But we always keep a few tables free for the neighbourhood folks if you want to try your luck!',
                 'closed': 'Closed',
                 'days': ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
                 'months': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -1099,6 +1101,7 @@
                 'error.generic': 'Er is een fout opgetreden. Probeer het opnieuw.',
                 'error.slotUnavailable': 'Dit tijdslot is niet meer beschikbaar. Kies een ander.',
                 'error.fullyBooked': 'Het spijt ons maar we zijn volgeboekt voor deze datum, we verwelkomen u graag op een andere datum.',
+                'error.dayBlocked': 'Sorry, de reserveringen zijn gesloten voor deze dag... Maar we houden altijd een paar tafels vrij voor de buurtbewoners als u uw kans wilt wagen!',
                 'closed': 'Gesloten',
                 'days': ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'],
                 'months': ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
@@ -1292,13 +1295,24 @@
             
             document.getElementById('timeSlotsLoading').style.display = 'none';
             
-            if (availability && availability.success && availability.slots) {
-                state.availableSlots = availability.slots;
-                const hasAvailableSlots = renderTimeSlots(parseInt(el.dataset.day));
+            if (availability && availability.success) {
+                // Vérifier si le jour est bloqué
+                if (availability.available === false && availability.reason === 'blocked') {
+                    document.getElementById('timeSlotsContent').innerHTML = '';
+                    showBlockedDayModal();
+                    updateSummary();
+                    updateSteps(2);
+                    return;
+                }
 
-                // Afficher le pop-up si aucun créneau n'est disponible
-                if (!hasAvailableSlots) {
-                    showFullyBookedModal();
+                if (availability.slots) {
+                    state.availableSlots = availability.slots;
+                    const hasAvailableSlots = renderTimeSlots(parseInt(el.dataset.day));
+
+                    // Afficher le pop-up si aucun créneau n'est disponible
+                    if (!hasAvailableSlots) {
+                        showFullyBookedModal();
+                    }
                 }
             } else {
                 // Fallback: afficher les créneaux sans vérification en temps réel
@@ -1462,15 +1476,20 @@
                     
                     document.getElementById('timeSlotsLoading').style.display = 'none';
                     
-                    if (availability && availability.success && availability.slots) {
-                        state.availableSlots = availability.slots;
-                        const selectedDate = document.querySelector('.date-option.selected');
-                        if (selectedDate) {
-                            const hasAvailableSlots = renderTimeSlots(parseInt(selectedDate.dataset.day));
+                    if (availability && availability.success) {
+                        if (availability.available === false && availability.reason === 'blocked') {
+                            document.getElementById('timeSlotsContent').innerHTML = '';
+                            showBlockedDayModal();
+                        } else if (availability.slots) {
+                            state.availableSlots = availability.slots;
+                            const selectedDate = document.querySelector('.date-option.selected');
+                            if (selectedDate) {
+                                const hasAvailableSlots = renderTimeSlots(parseInt(selectedDate.dataset.day));
 
-                            // Afficher le pop-up si aucun créneau n'est disponible
-                            if (!hasAvailableSlots) {
-                                showFullyBookedModal();
+                                // Afficher le pop-up si aucun créneau n'est disponible
+                                if (!hasAvailableSlots) {
+                                    showFullyBookedModal();
+                                }
                             }
                         }
                     }
@@ -1583,6 +1602,29 @@
         }
 
         // ============================================
+        // MODAL JOUR BLOQUÉ
+        // ============================================
+
+        function showBlockedDayModal() {
+            const modal = document.getElementById('blockedDayModal');
+            const t = i18n[state.lang];
+
+            const titleEl = modal.querySelector('.modal-title');
+            titleEl.textContent = t['error.dayBlocked'];
+
+            modal.classList.add('visible');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeBlockedDayModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+
+            const modal = document.getElementById('blockedDayModal');
+            modal.classList.remove('visible');
+            document.body.style.overflow = '';
+        }
+
+        // ============================================
         // COOKIE NOTICE MODAL
         // ============================================
 
@@ -1677,6 +1719,15 @@
             <div class="modal-icon">📅</div>
             <h3 class="modal-title" data-i18n="error.fullyBooked"></h3>
             <button class="modal-btn" onclick="closeFullyBookedModal()">OK</button>
+        </div>
+    </div>
+
+    <!-- Modal jour bloqué -->
+    <div id="blockedDayModal" class="modal-overlay" onclick="closeBlockedDayModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-icon">🙏</div>
+            <h3 class="modal-title" data-i18n="error.dayBlocked"></h3>
+            <button class="modal-btn" onclick="closeBlockedDayModal()">OK</button>
         </div>
     </div>
 
