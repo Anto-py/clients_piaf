@@ -63,8 +63,9 @@ function initializeSheet() {
     reservationsSheet.getRange('A1:M1').setFontWeight('bold');
     reservationsSheet.setFrozenRows(1);
     reservationsSheet.getRange('B:B').setNumberFormat('@');
+    reservationsSheet.getRange('C:C').setNumberFormat('@');
   }
-  
+
   let closuresSheet = ss.getSheetByName('Fermetures');
   if (!closuresSheet) {
     closuresSheet = ss.insertSheet('Fermetures');
@@ -72,6 +73,8 @@ function initializeSheet() {
     closuresSheet.getRange('A1:D1').setFontWeight('bold');
     closuresSheet.setFrozenRows(1);
     closuresSheet.getRange('B:B').setNumberFormat('@');
+    closuresSheet.getRange('C:C').setNumberFormat('@');
+    closuresSheet.getRange('D:D').setNumberFormat('@');
   }
   
   let blocageSheet = ss.getSheetByName('BlocageJours');
@@ -1454,6 +1457,21 @@ function buildDailyEmailHtml(dateDisplay, restaurantName, confirmed, pending, is
 }
 
 /**
+ * Formate un champ heure pour l'affichage (gère le format ISO et HH:MM)
+ * Ex: "1899-12-30T13:00:00.000Z" → "13:00", "18:30" → "18:30"
+ */
+function formatTimeForDisplay(time) {
+  if (!time) return '';
+  var timeStr = String(time);
+  if (timeStr.includes('T')) {
+    var timePart = timeStr.split('T')[1];
+    var parts = timePart.split(':');
+    return parts[0] + ':' + parts[1];
+  }
+  return timeStr;
+}
+
+/**
  * Construit un tableau HTML pour une liste de réservations
  */
 function buildReservationTable(reservations, accentColor) {
@@ -1470,7 +1488,7 @@ function buildReservationTable(reservations, accentColor) {
   reservations.forEach(function(r, index) {
     const bgColor = index % 2 === 0 ? '#f9f9f9' : '#ffffff';
     html += '<tr style="background-color: ' + bgColor + ';">';
-    html += '<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>' + r.heure + '</strong></td>';
+    html += '<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>' + formatTimeForDisplay(r.heure) + '</strong></td>';
     html += '<td style="padding: 8px; border-bottom: 1px solid #eee;">' + r.nom + '</td>';
     html += '<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">' + r.personnes + '</td>';
     html += '<td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">' + (r.tables || '—') + '</td>';
