@@ -268,6 +268,57 @@
             box-shadow: 0 4px 12px rgba(42, 53, 147, 0.3);
         }
 
+        /* Bouton blocage réservations */
+        .block-day-btn {
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--orange);
+            background: transparent;
+            color: var(--orange);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+
+        .block-day-btn:hover {
+            background: var(--orange);
+            color: var(--blanc);
+        }
+
+        .block-day-btn.blocked {
+            background: var(--rouge);
+            border-color: var(--rouge);
+            color: var(--blanc);
+        }
+
+        .block-day-btn.blocked:hover {
+            background: transparent;
+            color: var(--rouge);
+        }
+
+        .block-day-btn.loading {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .blocked-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .blocked-banner.visible {
+            display: flex;
+        }
+
         .tables-overview { margin-top: 2rem; }
 
         /* Controles du plan (date + creneaux) */
@@ -1533,9 +1584,18 @@
         <main class="main-content">
             <div class="date-header">
                 <h1 class="current-date" id="currentDateTitle"></h1>
-                <button class="add-reservation-btn" onclick="openManualReservationModal()">
-                    + Ajouter une réservation
-                </button>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <button class="block-day-btn" id="blockDayBtn" onclick="toggleBlockDay()">
+                        Stopper les réservations pour ce jour
+                    </button>
+                    <button class="add-reservation-btn" onclick="openManualReservationModal()">
+                        + Ajouter une réservation
+                    </button>
+                </div>
+            </div>
+
+            <div class="blocked-banner" id="blockedBanner">
+                ⚠️ Les réservations sont actuellement stoppées pour ce jour.
             </div>
 
             <div class="tables-overview">
@@ -2029,7 +2089,8 @@
             pendingEditGuestsId: null,
             manualSelectedTables: new Set(),
             // Cache des réservations par date pour éviter les appels API répétitifs
-            reservationsCache: {}
+            reservationsCache: {},
+            dayBlocked: false
         };
 
         const DAYS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -2133,6 +2194,10 @@
                 document.getElementById('statPending').textContent = data.stats?.pending || 0;
                 document.getElementById('statConfirmed').textContent = data.stats?.confirmed || 0;
                 document.getElementById('statGuests').textContent = data.stats?.totalGuests || 0;
+
+                // Mettre à jour l'état de blocage
+                state.dayBlocked = !!data.blocked;
+                updateBlockDayUI();
 
                 renderPendingList();
                 renderAllReservations();
@@ -3918,9 +3983,48 @@
         }
 
         // ============================================
+        // BLOCAGE DES RÉSERVATIONS PAR JOUR
+        // ============================================
+
+        function updateBlockDayUI() {
+            const btn = document.getElementById('blockDayBtn');
+            const banner = document.getElementById('blockedBanner');
+
+            if (state.dayBlocked) {
+                btn.textContent = 'Reprendre les réservations pour ce jour';
+                btn.classList.add('blocked');
+                banner.classList.add('visible');
+            } else {
+                btn.textContent = 'Stopper les réservations pour ce jour';
+                btn.classList.remove('blocked');
+                banner.classList.remove('visible');
+            }
+        }
+
+        async function toggleBlockDay() {
+            const btn = document.getElementById('blockDayBtn');
+            if (btn.classList.contains('loading')) return;
+
+            const action = state.dayBlocked ? 'réactiver' : 'stopper';
+            if (!confirm(`Voulez-vous ${action} les réservations pour ce jour ?`)) return;
+
+            btn.classList.add('loading');
+            const result = await apiCall('toggleDayBlock', { date: state.selectedDate });
+            btn.classList.remove('loading');
+
+            if (result.success) {
+                state.dayBlocked = result.blocked;
+                updateBlockDayUI();
+                showToast(result.message, 'success');
+            } else {
+                showToast('Erreur: ' + (result.error || 'Échec'), 'error');
+            }
+        }
+
+        // ============================================
         // FERMETURES
         // ============================================
-        
+
         async function loadClosures() {
             const result = await apiCall('getClosures');
             if (result.success) {

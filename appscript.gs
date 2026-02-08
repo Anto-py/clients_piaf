@@ -1,8 +1,12 @@
 /**
  * ============================================
  * PIAF - Système de réservation
- * Backend Google Apps Script v5
+ * Backend Google Apps Script v5.2
  * ============================================
+ *
+ * NOUVEAUTÉS v5.2:
+ * - Blocage des réservations par jour (admin toggle)
+ * - Les clients voient un message dédié pour les jours bloqués
  *
  * NOUVEAUTÉS v5:
  * - Suppression automatique des réservations expirées (après 2 heures)
@@ -70,6 +74,15 @@ function initializeSheet() {
     closuresSheet.getRange('B:B').setNumberFormat('@');
   }
   
+  let blocageSheet = ss.getSheetByName('BlocageJours');
+  if (!blocageSheet) {
+    blocageSheet = ss.insertSheet('BlocageJours');
+    blocageSheet.getRange('A1:B1').setValues([['Date', 'Cree_le']]);
+    blocageSheet.getRange('A1:B1').setFontWeight('bold');
+    blocageSheet.setFrozenRows(1);
+    blocageSheet.getRange('A:A').setNumberFormat('@');
+  }
+
   let configSheet = ss.getSheetByName('Configuration');
   if (!configSheet) {
     configSheet = ss.insertSheet('Configuration');
@@ -275,7 +288,21 @@ function handleRequest(e) {
         if (!checkAdminAccess(params.secret)) { result = { success: false, error: 'Accès refusé' }; }
         else { result = getClosures(); }
         break;
-        
+
+      case 'toggleDayBlock':
+        if (!checkAdminAccess(params.secret)) { result = { success: false, error: 'Accès refusé' }; }
+        else { result = toggleDayBlock(params.date); }
+        break;
+
+      case 'getDayBlocks':
+        if (!checkAdminAccess(params.secret)) { result = { success: false, error: 'Accès refusé' }; }
+        else { result = getDayBlocks(); }
+        break;
+
+      case 'isDayBlocked':
+        result = isDayBlocked(params.date);
+        break;
+
       case 'getDashboardData':
         if (!checkAdminAccess(params.secret)) { result = { success: false, error: 'Accès refusé' }; }
         else { result = getDashboardData(params.date); }
@@ -391,9 +418,14 @@ function getAvailability(dateStr, guests) {
 
   if (!schedule.open) return { success: true, available: false, reason: 'closed' };
 
+  // Vérifier si le jour est bloqué par l'admin
+  const normalizedDateStr = normalizeDate(dateStr);
+  if (isDayBlockedInternal(normalizedDateStr)) {
+    return { success: true, available: false, reason: 'blocked' };
+  }
+
   // Empêcher les réservations le jour même
   const todayStr = Utilities.formatDate(new Date(), 'Europe/Brussels', 'yyyy-MM-dd');
-  const normalizedDateStr = normalizeDate(dateStr);
   if (normalizedDateStr <= todayStr) {
     return { success: true, available: false, reason: 'same_day' };
   }
@@ -552,6 +584,11 @@ function createReservation(data) {
   }
   
   const normalizedDate = normalizeDate(data.date);
+
+  // Vérifier si le jour est bloqué
+  if (isDayBlockedInternal(normalizedDate)) {
+    return { success: false, error: 'Les réservations sont clôturées pour ce jour' };
+  }
 
   // Empêcher les réservations le jour même
   const todayStr = Utilities.formatDate(new Date(), 'Europe/Brussels', 'yyyy-MM-dd');
@@ -1021,6 +1058,86 @@ function updateReservation(id, data) {
 }
 
 // ============================================
+// BLOCAGE DES RÉSERVATIONS PAR JOUR
+// ============================================
+
+/**
+ * Vérifie si un jour est bloqué (fonction interne, pas d'objet JSON)
+ */
+function isDayBlockedInternal(dateStr) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('BlocageJours');
+  if (!sheet) return false;
+
+  const data = sheet.getDataRange().getValues();
+  const normalized = normalizeDate(dateStr);
+
+  for (let i = 1; i < data.length; i++) {
+    if (normalizeDate(data[i][0]) === normalized) return true;
+  }
+  return false;
+}
+
+/**
+ * Vérifie si un jour est bloqué (endpoint public)
+ */
+function isDayBlocked(dateStr) {
+  return { success: true, date: normalizeDate(dateStr), blocked: isDayBlockedInternal(dateStr) };
+}
+
+/**
+ * Retourne tous les jours bloqués (endpoint admin)
+ */
+function getDayBlocks() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('BlocageJours');
+  if (!sheet) return { success: true, blockedDays: [] };
+
+  const data = sheet.getDataRange().getValues();
+  const blockedDays = [];
+  for (let i = 1; i < data.length; i++) {
+    if (!data[i][0]) continue;
+    blockedDays.push(normalizeDate(data[i][0]));
+  }
+  return { success: true, blockedDays };
+}
+
+/**
+ * Active/désactive le blocage des réservations pour un jour
+ */
+function toggleDayBlock(dateStr) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('BlocageJours');
+
+  // Créer le sheet s'il n'existe pas
+  if (!sheet) {
+    sheet = ss.insertSheet('BlocageJours');
+    sheet.getRange('A1:B1').setValues([['Date', 'Cree_le']]);
+    sheet.getRange('A1:B1').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    sheet.getRange('A:A').setNumberFormat('@');
+  }
+
+  const normalized = normalizeDate(dateStr);
+  const data = sheet.getDataRange().getValues();
+
+  // Chercher si le jour est déjà bloqué
+  for (let i = 1; i < data.length; i++) {
+    if (normalizeDate(data[i][0]) === normalized) {
+      // Débloquer : supprimer la ligne
+      sheet.deleteRow(i + 1);
+      Logger.log('Jour débloqué: ' + normalized);
+      return { success: true, date: normalized, blocked: false, message: 'Réservations réactivées pour le ' + normalized };
+    }
+  }
+
+  // Bloquer : ajouter une ligne
+  sheet.appendRow([normalized, new Date().toISOString()]);
+  Logger.log('Jour bloqué: ' + normalized);
+  return { success: true, date: normalized, blocked: true, message: 'Réservations stoppées pour le ' + normalized };
+}
+
+// ============================================
 // FERMETURES
 // ============================================
 
@@ -1088,7 +1205,8 @@ function getDashboardData(dateStr) {
     date,
     stats: { pending, confirmed, totalGuests },
     reservations,
-    closures: getClosuresForDate(date)
+    closures: getClosuresForDate(date),
+    blocked: isDayBlockedInternal(date)
   };
 }
 
