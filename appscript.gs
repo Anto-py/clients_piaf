@@ -388,8 +388,15 @@ function getAvailability(dateStr, guests) {
   const date = new Date(dateStr);
   const dayOfWeek = date.getDay();
   const schedule = CONFIG.SCHEDULE[dayOfWeek];
-  
+
   if (!schedule.open) return { success: true, available: false, reason: 'closed' };
+
+  // Empêcher les réservations le jour même
+  const todayStr = Utilities.formatDate(new Date(), 'Europe/Brussels', 'yyyy-MM-dd');
+  const normalizedDateStr = normalizeDate(dateStr);
+  if (normalizedDateStr <= todayStr) {
+    return { success: true, available: false, reason: 'same_day' };
+  }
   
   const closures = getClosuresForDate(dateStr);
   const reservations = getReservationsForDate(dateStr);
@@ -545,6 +552,13 @@ function createReservation(data) {
   }
   
   const normalizedDate = normalizeDate(data.date);
+
+  // Empêcher les réservations le jour même
+  const todayStr = Utilities.formatDate(new Date(), 'Europe/Brussels', 'yyyy-MM-dd');
+  if (normalizedDate <= todayStr) {
+    return { success: false, error: 'Les réservations ne sont pas possibles pour aujourd\'hui ou une date passée' };
+  }
+
   const existingReservations = getReservationsForDate(normalizedDate);
   const availability = getAvailableTablesForSlot(normalizedDate, data.time, existingReservations, guests);
   

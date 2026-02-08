@@ -1223,15 +1223,24 @@
                 const isOpen = schedule[dayOfWeek].open;
                 const t = i18n[state.lang];
 
+                // Empêcher les réservations le jour même
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const dateOnly = new Date(date);
+                dateOnly.setHours(0, 0, 0, 0);
+                const isToday = dateOnly.getTime() === today.getTime();
+                const isPast = dateOnly < today;
+                const isSelectable = isOpen && !isToday && !isPast;
+
                 const div = document.createElement('div');
-                div.className = `date-option ${!isOpen ? 'disabled' : ''}`;
+                div.className = `date-option ${!isSelectable ? 'disabled' : ''}`;
                 div.innerHTML = `
                     <div class="date-day">${t.days[dayOfWeek]}</div>
                     <div class="date-number">${date.getDate()}</div>
                     <div class="date-month">${t.months[date.getMonth()]}</div>
                 `;
 
-                if (isOpen) {
+                if (isSelectable) {
                     div.dataset.date = formatLocalDate(date);
                     div.dataset.day = dayOfWeek;
                     div.onclick = () => selectDate(div);
