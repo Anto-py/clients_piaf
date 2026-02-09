@@ -1462,15 +1462,21 @@ function buildDailyEmailHtml(dateDisplay, restaurantName, confirmed, pending, is
  */
 function formatTimeForDisplay(time) {
   if (!time) return '';
-  if (time instanceof Date) {
-    var h = ('0' + time.getHours()).slice(-2);
-    var m = ('0' + time.getMinutes()).slice(-2);
-    return h + ':' + m;
-  }
+  // Utiliser Utilities.formatDate en priorité pour gérer les objets Date
+  // retournés par getValues() de Google Sheets (instanceof Date peut échouer en V8)
+  try {
+    var formatted = Utilities.formatDate(time, 'Europe/Brussels', 'HH:mm');
+    if (formatted) return formatted;
+  } catch(e) {}
   var timeStr = String(time);
   var isoMatch = timeStr.match(/\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})/);
   if (isoMatch) {
     return isoMatch[1] + ':' + isoMatch[2];
+  }
+  // Extraire HH:MM depuis n'importe quelle chaîne contenant ce format
+  var hmMatch = timeStr.match(/(\d{1,2}):(\d{2})/);
+  if (hmMatch) {
+    return ('0' + hmMatch[1]).slice(-2) + ':' + hmMatch[2];
   }
   return timeStr;
 }
