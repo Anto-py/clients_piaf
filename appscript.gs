@@ -1457,16 +1457,20 @@ function buildDailyEmailHtml(dateDisplay, restaurantName, confirmed, pending, is
 }
 
 /**
- * Formate un champ heure pour l'affichage (gère le format ISO et HH:MM)
- * Ex: "1899-12-30T13:00:00.000Z" → "13:00", "18:30" → "18:30"
+ * Formate un champ heure pour l'affichage
+ * Gère: Date object, ISO string "1899-12-30T13:00:00.000Z", ou "HH:MM"
  */
 function formatTimeForDisplay(time) {
   if (!time) return '';
+  if (time instanceof Date) {
+    var h = ('0' + time.getHours()).slice(-2);
+    var m = ('0' + time.getMinutes()).slice(-2);
+    return h + ':' + m;
+  }
   var timeStr = String(time);
-  if (timeStr.includes('T')) {
-    var timePart = timeStr.split('T')[1];
-    var parts = timePart.split(':');
-    return parts[0] + ':' + parts[1];
+  var isoMatch = timeStr.match(/\d{4}-\d{2}-\d{2}T(\d{2}):(\d{2})/);
+  if (isoMatch) {
+    return isoMatch[1] + ':' + isoMatch[2];
   }
   return timeStr;
 }
