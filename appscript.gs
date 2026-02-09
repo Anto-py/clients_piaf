@@ -1238,7 +1238,7 @@ function sendConfirmationEmail(reservation) {
 Nous avons le plaisir de vous confirmer votre réservation :
 
 📅 Date : ${formatDateDisplay(reservation.date, 'fr')}
-🕐 Heure : ${reservation.heure}
+🕐 Heure : ${formatTimeForDisplay(reservation.heure)}
 👥 Nombre de personnes : ${reservation.personnes}
 
 Pour toute modification ou annulation, merci de nous contacter au ${restaurantPhone}.
@@ -1253,7 +1253,7 @@ L'équipe ${restaurantName}`
 We are pleased to confirm your reservation:
 
 📅 Date: ${formatDateDisplay(reservation.date, 'en')}
-🕐 Time: ${reservation.heure}
+🕐 Time: ${formatTimeForDisplay(reservation.heure)}
 👥 Guests: ${reservation.personnes}
 
 For changes or cancellations, contact us at ${restaurantPhone}.
@@ -1268,7 +1268,7 @@ The ${restaurantName} team`
 Wij bevestigen uw reservering:
 
 📅 Datum: ${formatDateDisplay(reservation.date, 'nl')}
-🕐 Tijd: ${reservation.heure}
+🕐 Tijd: ${formatTimeForDisplay(reservation.heure)}
 👥 Personen: ${reservation.personnes}
 
 Voor wijzigingen, contacteer ons via ${restaurantPhone}.
@@ -1306,7 +1306,7 @@ function sendRefusalEmail(reservation, reason) {
       subject: `Concernant votre réservation - ${restaurantName}`,
       body: `Bonjour ${reservation.nom},
 
-Nous avons reçu votre demande pour le ${formatDateDisplay(reservation.date, 'fr')} à ${reservation.heure}.
+Nous avons reçu votre demande pour le ${formatDateDisplay(reservation.date, 'fr')} à ${formatTimeForDisplay(reservation.heure)}.
 
 Malheureusement, nous ne pouvons pas confirmer cette réservation.
 
@@ -1320,7 +1320,7 @@ L'équipe ${restaurantName}`
       subject: `Regarding your reservation - ${restaurantName}`,
       body: `Hello ${reservation.nom},
 
-We received your request for ${formatDateDisplay(reservation.date, 'en')} at ${reservation.heure}.
+We received your request for ${formatDateDisplay(reservation.date, 'en')} at ${formatTimeForDisplay(reservation.heure)}.
 
 Unfortunately, we cannot confirm this reservation.
 
@@ -1334,7 +1334,7 @@ The ${restaurantName} team`
       subject: `Betreft uw reservering - ${restaurantName}`,
       body: `Hallo ${reservation.nom},
 
-Wij ontvingen uw aanvraag voor ${formatDateDisplay(reservation.date, 'nl')} om ${reservation.heure}.
+Wij ontvingen uw aanvraag voor ${formatDateDisplay(reservation.date, 'nl')} om ${formatTimeForDisplay(reservation.heure)}.
 
 Helaas kunnen wij deze reservering niet bevestigen.
 
