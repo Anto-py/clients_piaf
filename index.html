@@ -1120,6 +1120,14 @@
         // ============================================
         
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialiser l'offset pour que la première date affichée soit aujourd'hui
+            const todayInit = new Date();
+            todayInit.setHours(0, 0, 0, 0);
+            const startDateInit = new Date(DATE_CONFIG.START_DATE);
+            startDateInit.setHours(0, 0, 0, 0);
+            const daysFromStart = Math.floor((todayInit - startDateInit) / (1000 * 60 * 60 * 24));
+            state.dateOffset = Math.max(0, daysFromStart);
+
             // Récupérer la langue sauvegardée depuis localStorage
             const savedLang = localStorage.getItem('piafLang');
             if (savedLang && ['fr', 'en', 'nl'].includes(savedLang)) {
@@ -1213,8 +1221,8 @@
             const endDate = new Date(DATE_CONFIG.END_DATE);
             const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
 
-            // Calculer le jour de départ basé sur l'offset
-            const startDay = state.dateOffset * DATE_CONFIG.DATES_PER_PAGE;
+            // Calculer le jour de départ basé sur l'offset (en jours depuis START_DATE)
+            const startDay = state.dateOffset;
 
             for (let i = 0; i < DATE_CONFIG.DATES_PER_PAGE; i++) {
                 const dayIndex = startDay + i;
@@ -1264,10 +1272,10 @@
         }
 
         function navigateDates(direction) {
-            const newOffset = state.dateOffset + direction;
-            const maxOffset = Math.ceil(getTotalDays() / DATE_CONFIG.DATES_PER_PAGE) - 1;
+            const newOffset = state.dateOffset + direction * DATE_CONFIG.DATES_PER_PAGE;
+            const totalDays = getTotalDays();
 
-            if (newOffset >= 0 && newOffset <= maxOffset) {
+            if (newOffset >= 0 && newOffset < totalDays) {
                 state.dateOffset = newOffset;
                 generateDates();
             }
@@ -1276,10 +1284,10 @@
         function updateDateNavButtons() {
             const prevBtn = document.getElementById('datePrev');
             const nextBtn = document.getElementById('dateNext');
-            const maxOffset = Math.ceil(getTotalDays() / DATE_CONFIG.DATES_PER_PAGE) - 1;
+            const totalDays = getTotalDays();
 
-            prevBtn.disabled = state.dateOffset === 0;
-            nextBtn.disabled = state.dateOffset >= maxOffset;
+            prevBtn.disabled = state.dateOffset <= 0;
+            nextBtn.disabled = state.dateOffset + DATE_CONFIG.DATES_PER_PAGE >= totalDays;
         }
 
         async function selectDate(el) {
