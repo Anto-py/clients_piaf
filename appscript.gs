@@ -37,7 +37,7 @@ const CONFIG = {
     list: [1, 2, 10, 11, 12, 13, 14, 15, 16, 17],
     capacity: { 1: 4, 2: 2, 10: 4, 11: 4, 12: 2, 13: 2, 14: 4, 15: 2, 16: 2, 17: 2 },
     maxGroupSize: 8,
-    minGuests: 2
+    minGuests: 1
   },
   OCCUPATION_DURATION: 120, // durée d'occupation en minutes (2 heures)
   MIN_ADVANCE_HOURS: 2,
