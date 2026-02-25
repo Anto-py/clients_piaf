@@ -996,6 +996,7 @@
                 'date.title': 'Choisissez une date',
                 'guests.title': 'Nombre de personnes',
                 'guests.label': 'personnes',
+                'guests.label.singular': 'personne',
                 'time.title': 'Choisissez un créneau',
                 'time.selectDate': 'Sélectionnez d\'abord une date',
                 'time.noSlots': 'Aucun créneau disponible pour cette date',
@@ -1037,6 +1038,7 @@
                 'date.title': 'Choose a date',
                 'guests.title': 'Number of guests',
                 'guests.label': 'guests',
+                'guests.label.singular': 'guest',
                 'time.title': 'Choose a time slot',
                 'time.selectDate': 'Select a date first',
                 'time.noSlots': 'No slots available for this date',
@@ -1078,6 +1080,7 @@
                 'date.title': 'Kies een datum',
                 'guests.title': 'Aantal personen',
                 'guests.label': 'personen',
+                'guests.label.singular': 'persoon',
                 'time.title': 'Kies een tijdslot',
                 'time.selectDate': 'Selecteer eerst een datum',
                 'time.noSlots': 'Geen beschikbare slots voor deze datum',
@@ -1457,13 +1460,23 @@
         // PERSONNES
         // ============================================
         
+        function updateGuestsLabel() {
+            const t = i18n[state.lang];
+            const labelEl = document.querySelector('[data-i18n="guests.label"]');
+            if (labelEl) {
+                const key = state.guests === 1 ? 'guests.label.singular' : 'guests.label';
+                labelEl.innerHTML = t[key] || t['guests.label'];
+            }
+        }
+
         async function changeGuests(delta) {
             const newValue = state.guests + delta;
-            if (newValue >= 2 && newValue <= 8) {
+            if (newValue >= 1 && newValue <= 8) {
                 state.guests = newValue;
                 document.getElementById('guestsNumber').textContent = state.guests;
-                document.getElementById('guestsMinus').disabled = state.guests <= 2;
+                document.getElementById('guestsMinus').disabled = state.guests <= 1;
                 document.getElementById('guestsPlus').disabled = state.guests >= 8;
+                updateGuestsLabel();
                 updateSummary();
                 
                 // Recharger les disponibilités si une date est sélectionnée
@@ -1710,6 +1723,7 @@
 
             generateDates();
             updateSummary();
+            updateGuestsLabel();
         }
     </script>
 
