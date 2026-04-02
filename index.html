@@ -134,6 +134,17 @@
             opacity: 0.9;
         }
 
+        .closure-banner {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+            padding: 0.85rem 1.5rem;
+            text-align: center;
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+
         /* Container principal */
         .container {
             max-width: 600px;
@@ -792,6 +803,10 @@
         </div>
     </section>
 
+    <div class="closure-banner">
+        Nous serons exceptionnellement fermés du 13 au 19 avril.
+    </div>
+
     <div class="container" id="bookingForm">
         <div class="steps">
             <div class="step active" data-step="1">
@@ -1244,7 +1259,13 @@
                 dateOnly.setHours(0, 0, 0, 0);
                 const isToday = dateOnly.getTime() === today.getTime();
                 const isPast = dateOnly < today;
-                const isSelectable = isOpen && !isToday && !isPast;
+
+                // Fermeture exceptionnelle du 13 au 19 avril 2026
+                const closureStart = new Date(2026, 3, 13); // 13 avril
+                const closureEnd = new Date(2026, 3, 19);   // 19 avril
+                const isClosed = dateOnly >= closureStart && dateOnly <= closureEnd;
+
+                const isSelectable = isOpen && !isToday && !isPast && !isClosed;
 
                 const div = document.createElement('div');
                 div.className = `date-option ${!isSelectable ? 'disabled' : ''}`;
