@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piaf — Réservation</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Lato:wght@400;500&display=swap" rel="stylesheet">
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Piaf — Réservation</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&amp;family=Lato:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
         :root {
             --bleu-piaf: #2a3593;
             --bleu-hover: #1f2870;
@@ -787,160 +788,146 @@
     </style>
 </head>
 <body>
-    <header>
-        <a href="#" class="logo"><img src="logo_piaf.png" alt="PIAF - Resto de quartier" class="logo-img"></a>
-        <div class="lang-selector">
-            <button class="lang-btn active" onclick="setLang('fr')">FR</button>
-            <button class="lang-btn" onclick="setLang('en')">EN</button>
-            <button class="lang-btn" onclick="setLang('nl')">NL</button>
-        </div>
-    </header>
-
-    <section class="hero">
-        <div class="hero-content">
-            <h1 data-i18n="hero.title">Réserver une table</h1>
-            <p data-i18n="hero.subtitle">Pop-up restaurant • Bruxelles</p>
-        </div>
-    </section>
-
-    <div class="closure-banner">
+<header>
+<a class="logo" href="#"><img alt="PIAF - Resto de quartier" class="logo-img" src="logo_piaf.png"/></a>
+<div class="lang-selector">
+<button class="lang-btn active" onclick="setLang('fr')">FR</button>
+<button class="lang-btn" onclick="setLang('en')">EN</button>
+<button class="lang-btn" onclick="setLang('nl')">NL</button>
+</div>
+</header>
+<section class="hero">
+<div class="hero-content">
+<h1 data-i18n="hero.title">Réserver une table</h1>
+<p data-i18n="hero.subtitle">Pop-up restaurant • Bruxelles</p>
+</div>
+</section>
+<div class="closure-banner">
         Nous serons exceptionnellement fermés du 13 au 19 avril.
     </div>
-
-    <div class="container" id="bookingForm">
-        <div class="steps">
-            <div class="step active" data-step="1">
-                <span class="step-number">1</span>
-                <span data-i18n="steps.when">Quand</span>
-            </div>
-            <div class="step" data-step="2">
-                <span class="step-number">2</span>
-                <span data-i18n="steps.who">Qui</span>
-            </div>
-            <div class="step" data-step="3">
-                <span class="step-number">3</span>
-                <span data-i18n="steps.contact">Contact</span>
-            </div>
-        </div>
-
-        <div id="errorContainer" class="hidden"></div>
-
-        <!-- Date -->
-        <div class="card">
-            <h2 class="card-title" data-i18n="date.title">Choisissez une date</h2>
-            <div class="date-navigation">
-                <button class="date-nav-btn" id="datePrev" onclick="navigateDates(-1)" disabled>
-                    <span>‹</span>
-                </button>
-                <div class="date-grid" id="dateGrid">
-                    <!-- Généré par JS -->
-                </div>
-                <button class="date-nav-btn" id="dateNext" onclick="navigateDates(1)">
-                    <span>›</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Nombre de personnes -->
-        <div class="card">
-            <h2 class="card-title" data-i18n="guests.title">Nombre de personnes</h2>
-            <div class="guests-selector">
-                <button class="guests-btn" onclick="changeGuests(-1)" id="guestsMinus">−</button>
-                <div class="guests-count">
-                    <div class="guests-number" id="guestsNumber">2</div>
-                    <div class="guests-label" data-i18n="guests.label">personnes</div>
-                </div>
-                <button class="guests-btn" onclick="changeGuests(1)" id="guestsPlus">+</button>
-            </div>
-        </div>
-
-        <!-- Heure -->
-        <div class="card">
-            <h2 class="card-title" data-i18n="time.title">Choisissez un créneau</h2>
-            <div id="timeSlots">
-                <div class="loading" id="timeSlotsLoading" style="display: none;">
-                    <div class="spinner"></div>
-                    <span data-i18n="loading">Chargement des disponibilités...</span>
-                </div>
-                <div id="timeSlotsContent">
-                    <p style="color: var(--gris); text-align: center;" data-i18n="time.selectDate">
+<div class="container" id="bookingForm">
+<div class="steps">
+<div class="step active" data-step="1">
+<span class="step-number">1</span>
+<span data-i18n="steps.when">Quand</span>
+</div>
+<div class="step" data-step="2">
+<span class="step-number">2</span>
+<span data-i18n="steps.who">Qui</span>
+</div>
+<div class="step" data-step="3">
+<span class="step-number">3</span>
+<span data-i18n="steps.contact">Contact</span>
+</div>
+</div>
+<div class="hidden" id="errorContainer"></div>
+<!-- Date -->
+<div class="card">
+<h2 class="card-title" data-i18n="date.title">Choisissez une date</h2>
+<div class="date-navigation">
+<button class="date-nav-btn" disabled="" id="datePrev" onclick="navigateDates(-1)">
+<span>‹</span>
+</button>
+<div class="date-grid" id="dateGrid">
+<!-- Généré par JS -->
+</div>
+<button class="date-nav-btn" id="dateNext" onclick="navigateDates(1)">
+<span>›</span>
+</button>
+</div>
+</div>
+<!-- Nombre de personnes -->
+<div class="card">
+<h2 class="card-title" data-i18n="guests.title">Nombre de personnes</h2>
+<div class="guests-selector">
+<button class="guests-btn" id="guestsMinus" onclick="changeGuests(-1)">−</button>
+<div class="guests-count">
+<div class="guests-number" id="guestsNumber">2</div>
+<div class="guests-label" data-i18n="guests.label">personnes</div>
+</div>
+<button class="guests-btn" id="guestsPlus" onclick="changeGuests(1)">+</button>
+</div>
+</div>
+<!-- Heure -->
+<div class="card">
+<h2 class="card-title" data-i18n="time.title">Choisissez un créneau</h2>
+<div id="timeSlots">
+<div class="loading" id="timeSlotsLoading" style="display: none;">
+<div class="spinner"></div>
+<span data-i18n="loading">Chargement des disponibilités...</span>
+</div>
+<div id="timeSlotsContent">
+<p data-i18n="time.selectDate" style="color: var(--gris); text-align: center;">
                         Sélectionnez d'abord une date
                     </p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Coordonnées -->
-        <div class="card">
-            <h2 class="card-title" data-i18n="contact.title">Vos coordonnées</h2>
-            
-            <div class="form-group">
-                <label data-i18n="contact.name">Nom ou prénom <span class="required">*</span></label>
-                <input type="text" class="form-input" id="clientName" placeholder="Marie Dupont">
-            </div>
-
-            <div class="form-group">
-                <label data-i18n="contact.phone">Téléphone <span class="required">*</span></label>
-                <input type="tel" class="form-input" id="clientPhone" placeholder="+32 4XX XX XX XX">
-            </div>
-
-            <div class="form-group">
-                <label data-i18n="contact.email">Email <span class="required">*</span></label>
-                <input type="email" class="form-input" id="clientEmail" placeholder="marie@exemple.be">
-            </div>
-
-            <div class="form-group">
-                <label data-i18n="contact.remarque">Remarque (optionnel)</label>
-                <textarea class="form-input" id="clientRemarque" rows="2" placeholder="Ex: Anniversaire, allergie, chaise bébé..." style="resize: vertical;"></textarea>
-            </div>
-        </div>
-
-        <!-- Récapitulatif -->
-        <div class="summary">
-            <div class="summary-title" data-i18n="summary.title">Récapitulatif</div>
-            <div class="summary-row">
-                <span class="summary-label" data-i18n="summary.date">Date</span>
-                <span class="summary-value" id="summaryDate">—</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label" data-i18n="summary.time">Heure</span>
-                <span class="summary-value" id="summaryTime">—</span>
-            </div>
-            <div class="summary-row">
-                <span class="summary-label" data-i18n="summary.guests">Personnes</span>
-                <span class="summary-value" id="summaryGuests">2</span>
-            </div>
-        </div>
-
-        <button class="btn-primary" id="submitBtn" onclick="submitBooking()" disabled data-i18n="submit">
+</div>
+</div>
+</div>
+<!-- Coordonnées -->
+<div class="card">
+<h2 class="card-title" data-i18n="contact.title">Vos coordonnées</h2>
+<div class="form-group">
+<label data-i18n="contact.name">Nom ou prénom <span class="required">*</span></label>
+<input class="form-input" id="clientName" placeholder="Marie Dupont" type="text"/>
+</div>
+<div class="form-group">
+<label data-i18n="contact.phone">Téléphone <span class="required">*</span></label>
+<input class="form-input" id="clientPhone" placeholder="+32 4XX XX XX XX" type="tel"/>
+</div>
+<div class="form-group">
+<label data-i18n="contact.email">Email <span class="required">*</span></label>
+<input class="form-input" id="clientEmail" placeholder="marie@exemple.be" type="email"/>
+</div>
+<div class="form-group">
+<label data-i18n="contact.remarque">Remarque (optionnel)</label>
+<textarea class="form-input" id="clientRemarque" placeholder="Ex: Anniversaire, allergie, chaise bébé..." rows="2" style="resize: vertical;"></textarea>
+</div>
+</div>
+<!-- Récapitulatif -->
+<div class="summary">
+<div class="summary-title" data-i18n="summary.title">Récapitulatif</div>
+<div class="summary-row">
+<span class="summary-label" data-i18n="summary.date">Date</span>
+<span class="summary-value" id="summaryDate">—</span>
+</div>
+<div class="summary-row">
+<span class="summary-label" data-i18n="summary.time">Heure</span>
+<span class="summary-value" id="summaryTime">—</span>
+</div>
+<div class="summary-row">
+<span class="summary-label" data-i18n="summary.guests">Personnes</span>
+<span class="summary-value" id="summaryGuests">2</span>
+</div>
+</div>
+<button class="btn-primary" data-i18n="submit" disabled="" id="submitBtn" onclick="submitBooking()">
             Envoyer ma demande
         </button>
-
-        <div class="notice">
-            <div class="notice-title" data-i18n="notice.title">📌 Bon à savoir</div>
-            <span data-i18n="notice.text">Votre réservation sera confirmée par email après validation par notre équipe. Pour toute modification ou annulation, contactez-nous directement.</span>
-        </div>
-    </div>
-
-    <!-- Confirmation -->
-    <div class="container hidden" id="confirmationScreen">
-        <div class="card confirmation">
-            <div class="confirmation-icon">🕊️</div>
-            <h2 data-i18n="confirmation.title">Demande envoyée !</h2>
-            <p data-i18n="confirmation.text">
+<div class="notice">
+<div class="notice-title" data-i18n="notice.title">📌 Bon à savoir</div>
+<span data-i18n="notice.text">Votre réservation sera confirmée par email après validation par notre équipe. Pour toute modification ou annulation, contactez-nous directement.</span>
+</div>
+<div class="ab-attribution" style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);font-size:0.8rem;opacity:0.65;">
+<a href="https://www.linkedin.com/in/antonin-bareau/" rel="noopener" style="font-weight:bold;color:inherit;text-decoration:none;" target="_blank">Antonin Bareau</a>
+   — 
+  <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" style="color:inherit;text-decoration:none;" target="_blank">Licence CC BY-SA 4.0</a>
+</div></div>
+<!-- Confirmation -->
+<div class="container hidden" id="confirmationScreen">
+<div class="card confirmation">
+<div class="confirmation-icon">🕊️</div>
+<h2 data-i18n="confirmation.title">Demande envoyée !</h2>
+<p data-i18n="confirmation.text">
                 Merci pour votre demande de réservation. Vous recevrez un email de confirmation dès que notre équipe aura validé votre réservation.
             </p>
-        </div>
-    </div>
-
-    <footer>
-        <p>Piaf • Bruxelles • <a href="tel:+32456668560">+32 456 66 85 60</a></p>
-        <div class="footer-links">
-            <a href="politique-donnees.html" data-i18n="footer.dataPolicy">Politique de traitement des données</a>
-        </div>
-    </footer>
-
-    <script>
+</div>
+</div>
+<footer>
+<p>Piaf • Bruxelles • <a href="tel:+32456668560">+32 456 66 85 60</a></p>
+<div class="footer-links">
+<a data-i18n="footer.dataPolicy" href="politique-donnees.html">Politique de traitement des données</a>
+</div>
+</footer>
+<script>
         // ============================================
         // CONFIGURATION - À MODIFIER
         // ============================================
@@ -1755,42 +1742,33 @@
             updateGuestsLabel();
         }
     </script>
-
-    <!-- Modal complet -->
-    <div id="fullyBookedModal" class="modal-overlay" onclick="closeFullyBookedModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-icon">📅</div>
-            <h3 class="modal-title" data-i18n="error.fullyBooked"></h3>
-            <button class="modal-btn" onclick="closeFullyBookedModal()">OK</button>
-        </div>
-    </div>
-
-    <!-- Modal jour bloqué -->
-    <div id="blockedDayModal" class="modal-overlay" onclick="closeBlockedDayModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-icon">🙏</div>
-            <h3 class="modal-title" data-i18n="error.dayBlocked"></h3>
-            <button class="modal-btn" onclick="closeBlockedDayModal()">OK</button>
-        </div>
-    </div>
-
-    <!-- Cookie Notice Modal -->
-    <div id="cookieNoticeModal" class="modal-overlay" onclick="closeCookieNotice(event)">
-        <div class="cookie-modal-content" onclick="event.stopPropagation()">
-            <div class="modal-icon">🍪</div>
-            <h3 class="modal-title" data-i18n="cookie.title">Pas de cookies ici !</h3>
-            <p class="modal-text" data-i18n="cookie.text">
-                Ici, vous n'êtes pas le produit donc pas de cookies! !<br><br>
+<!-- Modal complet -->
+<div class="modal-overlay" id="fullyBookedModal" onclick="closeFullyBookedModal(event)">
+<div class="modal-content" onclick="event.stopPropagation()">
+<div class="modal-icon">📅</div>
+<h3 class="modal-title" data-i18n="error.fullyBooked"></h3>
+<button class="modal-btn" onclick="closeFullyBookedModal()">OK</button>
+</div>
+</div>
+<!-- Modal jour bloqué -->
+<div class="modal-overlay" id="blockedDayModal" onclick="closeBlockedDayModal(event)">
+<div class="modal-content" onclick="event.stopPropagation()">
+<div class="modal-icon">🙏</div>
+<h3 class="modal-title" data-i18n="error.dayBlocked"></h3>
+<button class="modal-btn" onclick="closeBlockedDayModal()">OK</button>
+</div>
+</div>
+<!-- Cookie Notice Modal -->
+<div class="modal-overlay" id="cookieNoticeModal" onclick="closeCookieNotice(event)">
+<div class="cookie-modal-content" onclick="event.stopPropagation()">
+<div class="modal-icon">🍪</div>
+<h3 class="modal-title" data-i18n="cookie.title">Pas de cookies ici !</h3>
+<p class="modal-text" data-i18n="cookie.text">
+                Ici, vous n'êtes pas le produit donc pas de cookies! !<br/><br/>
                 Vous pouvez toutefois nous laisser vos coordonnées pour être tenu(e) au courant de nos activités via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">notre site</a>.
             </p>
-            <button class="modal-btn" onclick="closeCookieNotice()">J'ai compris</button>
-        </div>
-    <div class="ab-attribution" style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);font-size:0.8rem;opacity:0.65;">
-  <a href="https://www.linkedin.com/in/antonin-bareau/" target="_blank" rel="noopener" style="font-weight:bold;color:inherit;text-decoration:none;">Antonin Bareau</a>
-  &nbsp;&mdash;&nbsp;
-  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">Licence CC BY-SA 4.0</a>
+<button class="modal-btn" onclick="closeCookieNotice()">J'ai compris</button>
 </div>
 </div>
-
 </body>
 </html>
