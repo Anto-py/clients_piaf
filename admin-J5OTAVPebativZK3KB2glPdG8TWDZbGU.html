@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Piaf — Tableau de bord</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&family=Lato:wght@400;500&display=swap" rel="stylesheet">
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Piaf — Tableau de bord</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400&amp;family=Lato:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<style>
         :root {
             --bleu-piaf: #2a3593;
             --bleu-hover: #1f2870;
@@ -1529,532 +1530,473 @@
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo"><img src="logo_piaf.png" alt="PIAF - Resto de quartier" class="logo-img"><small class="admin-badge">Admin</small></div>
-        <div class="header-info">
-            <div class="api-status" id="apiStatus">
-                <span class="dot"></span>
-                <span id="apiStatusText">Connexion...</span>
-            </div>
-            <button class="mobile-date-btn" onclick="openMobilePanel('calendar')">
+<header>
+<div class="logo"><img alt="PIAF - Resto de quartier" class="logo-img" src="logo_piaf.png"/><small class="admin-badge">Admin</small></div>
+<div class="header-info">
+<div class="api-status" id="apiStatus">
+<span class="dot"></span>
+<span id="apiStatusText">Connexion...</span>
+</div>
+<button class="mobile-date-btn" onclick="openMobilePanel('calendar')">
                 📅 <span id="mobileDateText"></span>
-            </button>
-            <div class="header-date" id="headerDate"></div>
-            <button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">↻ Actualiser</button>
-        </div>
-    </header>
-
-    <div class="container">
-        <aside class="sidebar-left">
-            <h2 class="section-title">Calendrier</h2>
-            <div class="calendar">
-                <div class="calendar-header">
-                    <span class="calendar-month" id="calendarMonth"></span>
-                    <div class="calendar-nav">
-                        <button onclick="changeMonth(-1)">‹</button>
-                        <button onclick="changeMonth(1)">›</button>
-                    </div>
-                </div>
-                <div class="calendar-grid" id="calendarGrid"></div>
-            </div>
-
-            <h2 class="section-title">Aujourd'hui</h2>
-            <div class="quick-stats">
-                <div class="stat-card">
-                    <span class="stat-label">En attente</span>
-                    <span class="stat-value pending" id="statPending">-</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Confirmées</span>
-                    <span class="stat-value confirmed" id="statConfirmed">-</span>
-                </div>
-                <div class="stat-card">
-                    <span class="stat-label">Couverts</span>
-                    <span class="stat-value" id="statGuests">-</span>
-                </div>
-            </div>
-
-            <div class="closures-section">
-                <h2 class="section-title">Fermetures</h2>
-                <div id="closuresList"></div>
-                <button class="add-closure-btn" onclick="openClosureModal()">+ Ajouter une fermeture</button>
-            </div>
-        </aside>
-
-        <main class="main-content">
-            <div class="date-header">
-                <h1 class="current-date" id="currentDateTitle"></h1>
-                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                    <button class="block-day-btn" id="blockDayBtn" onclick="toggleBlockDay()">
+</button>
+<div class="header-date" id="headerDate"></div>
+<button class="refresh-btn" id="refreshBtn" onclick="refreshAll()">↻ Actualiser</button>
+</div>
+</header>
+<div class="container">
+<aside class="sidebar-left">
+<h2 class="section-title">Calendrier</h2>
+<div class="calendar">
+<div class="calendar-header">
+<span class="calendar-month" id="calendarMonth"></span>
+<div class="calendar-nav">
+<button onclick="changeMonth(-1)">‹</button>
+<button onclick="changeMonth(1)">›</button>
+</div>
+</div>
+<div class="calendar-grid" id="calendarGrid"></div>
+</div>
+<h2 class="section-title">Aujourd'hui</h2>
+<div class="quick-stats">
+<div class="stat-card">
+<span class="stat-label">En attente</span>
+<span class="stat-value pending" id="statPending">-</span>
+</div>
+<div class="stat-card">
+<span class="stat-label">Confirmées</span>
+<span class="stat-value confirmed" id="statConfirmed">-</span>
+</div>
+<div class="stat-card">
+<span class="stat-label">Couverts</span>
+<span class="stat-value" id="statGuests">-</span>
+</div>
+</div>
+<div class="closures-section">
+<h2 class="section-title">Fermetures</h2>
+<div id="closuresList"></div>
+<button class="add-closure-btn" onclick="openClosureModal()">+ Ajouter une fermeture</button>
+</div>
+</aside>
+<main class="main-content">
+<div class="date-header">
+<h1 class="current-date" id="currentDateTitle"></h1>
+<div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+<button class="block-day-btn" id="blockDayBtn" onclick="toggleBlockDay()">
                         Stopper les réservations pour ce jour
                     </button>
-                    <button class="add-reservation-btn" onclick="openManualReservationModal()">
+<button class="add-reservation-btn" onclick="openManualReservationModal()">
                         + Ajouter une réservation
                     </button>
-                </div>
-            </div>
-
-            <div class="blocked-banner" id="blockedBanner">
+</div>
+</div>
+<div class="blocked-banner" id="blockedBanner">
                 ⚠️ Les réservations sont actuellement stoppées pour ce jour.
             </div>
-
-            <div class="tables-overview">
-                <h2 class="section-title">Plan des tables</h2>
-
-                <!-- Slider de créneaux horaires -->
-                <div class="timeslot-slider-container" id="timeslotSliderContainer">
-                    <div class="timeslot-slider-header">
-                        <span class="timeslot-slider-label">Créneau horaire</span>
-                        <span class="timeslot-current" id="timeslotCurrent">--:--</span>
-                    </div>
-                    <div class="timeslot-slider-wrapper">
-                        <input type="range" class="timeslot-slider" id="timeslotSlider" min="0" max="5" value="0" oninput="onTimeslotSliderChange(this.value)">
-                    </div>
-                    <div class="timeslot-labels" id="timeslotLabels">
-                        <!-- Les labels seront générés par JavaScript -->
-                    </div>
-                </div>
-
-                <div class="floor-plan">
-                    <div class="floor-grid" id="floorGrid">
-                        <!-- Les tables seront generees par JavaScript -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal details table -->
-            <div class="table-detail-modal" id="tableDetailModal">
-                <div class="table-detail-content">
-                    <div class="table-detail-header">
-                        <span class="table-detail-title" id="tableDetailTitle">Table X</span>
-                        <button class="table-detail-close" onclick="closeTableDetail()">&times;</button>
-                    </div>
-                    <div id="tableDetailBody">
-                        <!-- Contenu genere par JavaScript -->
-                    </div>
-                </div>
-            </div>
-
-            <div style="margin-top: 2rem;">
-                <h2 class="section-title">Toutes les réservations du jour</h2>
-                <div id="allReservations" class="pending-list"></div>
-            </div>
-        </main>
-
-        <aside class="sidebar-right">
-            <h2 class="section-title">Demandes en attente</h2>
-            <div class="pending-list" id="pendingList">
-                <div class="loading">
-                    <div class="spinner"></div>
+<div class="tables-overview">
+<h2 class="section-title">Plan des tables</h2>
+<!-- Slider de créneaux horaires -->
+<div class="timeslot-slider-container" id="timeslotSliderContainer">
+<div class="timeslot-slider-header">
+<span class="timeslot-slider-label">Créneau horaire</span>
+<span class="timeslot-current" id="timeslotCurrent">--:--</span>
+</div>
+<div class="timeslot-slider-wrapper">
+<input class="timeslot-slider" id="timeslotSlider" max="5" min="0" oninput="onTimeslotSliderChange(this.value)" type="range" value="0"/>
+</div>
+<div class="timeslot-labels" id="timeslotLabels">
+<!-- Les labels seront générés par JavaScript -->
+</div>
+</div>
+<div class="floor-plan">
+<div class="floor-grid" id="floorGrid">
+<!-- Les tables seront generees par JavaScript -->
+</div>
+</div>
+</div>
+<!-- Modal details table -->
+<div class="table-detail-modal" id="tableDetailModal">
+<div class="table-detail-content">
+<div class="table-detail-header">
+<span class="table-detail-title" id="tableDetailTitle">Table X</span>
+<button class="table-detail-close" onclick="closeTableDetail()">×</button>
+</div>
+<div id="tableDetailBody">
+<!-- Contenu genere par JavaScript -->
+</div>
+</div>
+</div>
+<div style="margin-top: 2rem;">
+<h2 class="section-title">Toutes les réservations du jour</h2>
+<div class="pending-list" id="allReservations"></div>
+</div>
+</main>
+<aside class="sidebar-right">
+<h2 class="section-title">Demandes en attente</h2>
+<div class="pending-list" id="pendingList">
+<div class="loading">
+<div class="spinner"></div>
                     Chargement...
                 </div>
-            </div>
-
-        </aside>
-    </div>
-
-    <!-- Barre de navigation mobile -->
-    <nav class="mobile-nav">
-        <div class="mobile-nav-buttons">
-            <button class="mobile-nav-btn" onclick="openMobilePanel('calendar')">
-                <span class="icon">📅</span>
-                <span>Calendrier</span>
-            </button>
-            <button class="mobile-nav-btn" onclick="openMobilePanel('reservations')">
-                <span class="icon">🍽️</span>
-                <span>Réservations</span>
-            </button>
-            <div class="mobile-nav-btn-wrapper">
-                <button class="mobile-nav-btn" onclick="openMobilePanel('pending')">
-                    <span class="icon">⏳</span>
-                    <span>En attente</span>
-                </button>
-                <span class="badge" id="mobilePendingBadge" style="display: none;">0</span>
-            </div>
-            <button class="mobile-nav-btn" onclick="openManualReservationModal()">
-                <span class="icon">➕</span>
-                <span>Ajouter</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Panneau mobile: Calendrier -->
-    <div class="mobile-panel" id="mobileCalendarPanel" onclick="closeMobilePanelOnOverlay(event, 'mobileCalendarPanel')">
-        <div class="mobile-panel-content">
-            <div class="mobile-panel-header">
-                <h3 class="mobile-panel-title">📅 Calendrier</h3>
-                <button class="mobile-panel-close" onclick="closeMobilePanel('mobileCalendarPanel')">×</button>
-            </div>
-
-            <!-- Calendrier mobile -->
-            <div class="calendar">
-                <div class="calendar-header">
-                    <span class="calendar-month" id="mobileCalendarMonth"></span>
-                    <div class="calendar-nav">
-                        <button onclick="changeMonth(-1); updateMobileCalendar();">‹</button>
-                        <button onclick="changeMonth(1); updateMobileCalendar();">›</button>
-                    </div>
-                </div>
-                <div class="calendar-grid" id="mobileCalendarGrid"></div>
-            </div>
-
-            <!-- Stats -->
-            <div class="mobile-stats">
-                <div class="mobile-stat-card">
-                    <span class="stat-value pending" id="mobileStatPending">-</span>
-                    <span class="stat-label">En attente</span>
-                </div>
-                <div class="mobile-stat-card">
-                    <span class="stat-value confirmed" id="mobileStatConfirmed">-</span>
-                    <span class="stat-label">Confirmées</span>
-                </div>
-                <div class="mobile-stat-card">
-                    <span class="stat-value" id="mobileStatGuests">-</span>
-                    <span class="stat-label">Couverts</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panneau mobile: Demandes en attente -->
-    <div class="mobile-panel" id="mobilePendingPanel" onclick="closeMobilePanelOnOverlay(event, 'mobilePendingPanel')">
-        <div class="mobile-panel-content">
-            <div class="mobile-panel-header">
-                <h3 class="mobile-panel-title">⏳ Demandes en attente</h3>
-                <button class="mobile-panel-close" onclick="closeMobilePanel('mobilePendingPanel')">×</button>
-            </div>
-            <div class="pending-list" id="mobilePendingList">
-                <div class="loading">
-                    <div class="spinner"></div>
+</div>
+</aside>
+<div class="ab-attribution" style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);font-size:0.8rem;opacity:0.65;">
+<a href="https://www.linkedin.com/in/antonin-bareau/" rel="noopener" style="font-weight:bold;color:inherit;text-decoration:none;" target="_blank">Antonin Bareau</a>
+   — 
+  <a href="https://creativecommons.org/licenses/by-sa/4.0/" rel="noopener" style="color:inherit;text-decoration:none;" target="_blank">Licence CC BY-SA 4.0</a>
+</div></div>
+<!-- Barre de navigation mobile -->
+<nav class="mobile-nav">
+<div class="mobile-nav-buttons">
+<button class="mobile-nav-btn" onclick="openMobilePanel('calendar')">
+<span class="icon">📅</span>
+<span>Calendrier</span>
+</button>
+<button class="mobile-nav-btn" onclick="openMobilePanel('reservations')">
+<span class="icon">🍽️</span>
+<span>Réservations</span>
+</button>
+<div class="mobile-nav-btn-wrapper">
+<button class="mobile-nav-btn" onclick="openMobilePanel('pending')">
+<span class="icon">⏳</span>
+<span>En attente</span>
+</button>
+<span class="badge" id="mobilePendingBadge" style="display: none;">0</span>
+</div>
+<button class="mobile-nav-btn" onclick="openManualReservationModal()">
+<span class="icon">➕</span>
+<span>Ajouter</span>
+</button>
+</div>
+</nav>
+<!-- Panneau mobile: Calendrier -->
+<div class="mobile-panel" id="mobileCalendarPanel" onclick="closeMobilePanelOnOverlay(event, 'mobileCalendarPanel')">
+<div class="mobile-panel-content">
+<div class="mobile-panel-header">
+<h3 class="mobile-panel-title">📅 Calendrier</h3>
+<button class="mobile-panel-close" onclick="closeMobilePanel('mobileCalendarPanel')">×</button>
+</div>
+<!-- Calendrier mobile -->
+<div class="calendar">
+<div class="calendar-header">
+<span class="calendar-month" id="mobileCalendarMonth"></span>
+<div class="calendar-nav">
+<button onclick="changeMonth(-1); updateMobileCalendar();">‹</button>
+<button onclick="changeMonth(1); updateMobileCalendar();">›</button>
+</div>
+</div>
+<div class="calendar-grid" id="mobileCalendarGrid"></div>
+</div>
+<!-- Stats -->
+<div class="mobile-stats">
+<div class="mobile-stat-card">
+<span class="stat-value pending" id="mobileStatPending">-</span>
+<span class="stat-label">En attente</span>
+</div>
+<div class="mobile-stat-card">
+<span class="stat-value confirmed" id="mobileStatConfirmed">-</span>
+<span class="stat-label">Confirmées</span>
+</div>
+<div class="mobile-stat-card">
+<span class="stat-value" id="mobileStatGuests">-</span>
+<span class="stat-label">Couverts</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Panneau mobile: Demandes en attente -->
+<div class="mobile-panel" id="mobilePendingPanel" onclick="closeMobilePanelOnOverlay(event, 'mobilePendingPanel')">
+<div class="mobile-panel-content">
+<div class="mobile-panel-header">
+<h3 class="mobile-panel-title">⏳ Demandes en attente</h3>
+<button class="mobile-panel-close" onclick="closeMobilePanel('mobilePendingPanel')">×</button>
+</div>
+<div class="pending-list" id="mobilePendingList">
+<div class="loading">
+<div class="spinner"></div>
                     Chargement...
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Panneau mobile: Réservations du jour -->
-    <div class="mobile-panel" id="mobileReservationsPanel" onclick="closeMobilePanelOnOverlay(event, 'mobileReservationsPanel')">
-        <div class="mobile-panel-content">
-            <div class="mobile-panel-header">
-                <h3 class="mobile-panel-title">🍽️ Réservations du jour</h3>
-                <button class="mobile-panel-close" onclick="closeMobilePanel('mobileReservationsPanel')">×</button>
-            </div>
-            <div class="pending-list" id="mobileReservationsList"></div>
-        </div>
-    </div>
-
-    <!-- Modal Confirmation avec sélection de tables -->
-    <div class="modal-overlay" id="confirmModal">
-        <div class="modal">
-            <h2 class="modal-title">Confirmer la réservation</h2>
-            <p class="modal-subtitle" id="confirmModalSubtitle"></p>
-            
-            <div class="tables-hint">
-                <strong id="tablesNeeded">1 table requise</strong> pour <span id="guestsCount">2</span> personnes à <span id="reservationTime">12:00</span>
-            </div>
-            
-            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+</div>
+</div>
+</div>
+<!-- Panneau mobile: Réservations du jour -->
+<div class="mobile-panel" id="mobileReservationsPanel" onclick="closeMobilePanelOnOverlay(event, 'mobileReservationsPanel')">
+<div class="mobile-panel-content">
+<div class="mobile-panel-header">
+<h3 class="mobile-panel-title">🍽️ Réservations du jour</h3>
+<button class="mobile-panel-close" onclick="closeMobilePanel('mobileReservationsPanel')">×</button>
+</div>
+<div class="pending-list" id="mobileReservationsList"></div>
+</div>
+</div>
+<!-- Modal Confirmation avec sélection de tables -->
+<div class="modal-overlay" id="confirmModal">
+<div class="modal">
+<h2 class="modal-title">Confirmer la réservation</h2>
+<p class="modal-subtitle" id="confirmModalSubtitle"></p>
+<div class="tables-hint">
+<strong id="tablesNeeded">1 table requise</strong> pour <span id="guestsCount">2</span> personnes à <span id="reservationTime">12:00</span>
+</div>
+<label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
                 Plan des tables :
             </label>
-
-            <!-- Slider d'heures pour la popup de confirmation -->
-            <div class="timeslot-slider-container" id="confirmTimeslotSliderContainer">
-                <div class="timeslot-slider-header">
-                    <span class="timeslot-slider-label">Créneau horaire</span>
-                    <span class="timeslot-current" id="confirmTimeslotCurrent">--:--</span>
-                </div>
-                <div class="timeslot-slider-wrapper">
-                    <input type="range" class="timeslot-slider" id="confirmTimeslotSlider"
-                           min="0" max="5" value="0" oninput="onConfirmTimeslotSliderChange(this.value)">
-                </div>
-                <div class="timeslot-labels" id="confirmTimeslotLabels">
-                </div>
-            </div>
-
-            <!-- Alerte de conflit -->
-            <div class="conflict-alert" id="confirmConflictAlert">
-                <div class="conflict-alert-title">⚠️ Conflit détecté</div>
-                <div class="conflict-alert-text" id="confirmConflictText"></div>
-            </div>
-
-            <!-- Plan des tables avec disposition spatiale -->
-            <div class="modal-floor-plan" id="confirmFloorPlan">
-                <div class="floor-grid" id="confirmFloorGrid">
-                    <p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Chargement...</p>
-                </div>
-                <div class="floor-plan-legend">
-                    <div class="legend-item"><span class="legend-color libre"></span> Libre</div>
-                    <div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
-                    <div class="legend-item"><span class="legend-color complete"></span> Complète</div>
-                    <div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
-                    <div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
-                </div>
-            </div>
-
-            <div class="selected-tables-summary">
-                <span>Tables sélectionnées :</span>
-                <span class="tables-list" id="selectedTablesList">Aucune</span>
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('confirmModal')">Annuler</button>
-                <button class="btn btn-confirm" id="confirmTableBtn" onclick="confirmWithTables()" disabled>
+<!-- Slider d'heures pour la popup de confirmation -->
+<div class="timeslot-slider-container" id="confirmTimeslotSliderContainer">
+<div class="timeslot-slider-header">
+<span class="timeslot-slider-label">Créneau horaire</span>
+<span class="timeslot-current" id="confirmTimeslotCurrent">--:--</span>
+</div>
+<div class="timeslot-slider-wrapper">
+<input class="timeslot-slider" id="confirmTimeslotSlider" max="5" min="0" oninput="onConfirmTimeslotSliderChange(this.value)" type="range" value="0"/>
+</div>
+<div class="timeslot-labels" id="confirmTimeslotLabels">
+</div>
+</div>
+<!-- Alerte de conflit -->
+<div class="conflict-alert" id="confirmConflictAlert">
+<div class="conflict-alert-title">⚠️ Conflit détecté</div>
+<div class="conflict-alert-text" id="confirmConflictText"></div>
+</div>
+<!-- Plan des tables avec disposition spatiale -->
+<div class="modal-floor-plan" id="confirmFloorPlan">
+<div class="floor-grid" id="confirmFloorGrid">
+<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Chargement...</p>
+</div>
+<div class="floor-plan-legend">
+<div class="legend-item"><span class="legend-color libre"></span> Libre</div>
+<div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
+<div class="legend-item"><span class="legend-color complete"></span> Complète</div>
+<div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
+<div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
+</div>
+</div>
+<div class="selected-tables-summary">
+<span>Tables sélectionnées :</span>
+<span class="tables-list" id="selectedTablesList">Aucune</span>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('confirmModal')">Annuler</button>
+<button class="btn btn-confirm" disabled="" id="confirmTableBtn" onclick="confirmWithTables()">
                     ✓ Confirmer avec ces tables
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Refus -->
-    <div class="modal-overlay" id="refuseModal">
-        <div class="modal">
-            <h2 class="modal-title">Refuser la réservation</h2>
-            <p class="modal-subtitle" id="refuseModalSubtitle"></p>
-            <div class="form-group">
-                <label>Message au client</label>
-                <textarea id="refuseMessage" placeholder="Ex: Nous sommes désolés, mais nous sommes complets..."></textarea>
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('refuseModal')">Annuler</button>
-                <button class="btn btn-send" onclick="confirmRefuse()">Envoyer le refus</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Fermeture -->
-    <div class="modal-overlay" id="closureModal">
-        <div class="modal">
-            <h2 class="modal-title">Ajouter une fermeture</h2>
-            <div class="form-group">
-                <label>Date</label>
-                <input type="date" id="closureDate">
-            </div>
-            <div class="form-group">
-                <label>Heure de début</label>
-                <input type="time" id="closureStart" value="12:00">
-            </div>
-            <div class="form-group">
-                <label>Heure de fin</label>
-                <input type="time" id="closureEnd" value="14:30">
-            </div>
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('closureModal')">Annuler</button>
-                <button class="btn btn-add" onclick="addClosure()">Ajouter</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NOUVEAU: Modal Ajout manuel de réservation -->
-    <div class="modal-overlay" id="manualReservationModal">
-        <div class="modal">
-            <h2 class="modal-title">Ajouter une réservation</h2>
-            <p class="modal-subtitle">Pour les réservations par téléphone</p>
-            
-            <div class="form-group">
-                <label>Date *</label>
-                <input type="date" id="manualDate">
-            </div>
-
-            <div class="form-group">
-                <label>Nombre de personnes *</label>
-                <input type="number" id="manualGuests" min="1" max="32" value="2">
-            </div>
-            
-            <div class="form-group">
-                <label>Nom du client *</label>
-                <input type="text" id="manualName" placeholder="Ex: Dupont">
-            </div>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Téléphone</label>
-                    <input type="tel" id="manualPhone" placeholder="+32 4XX XX XX XX">
-                </div>
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="manualEmail" placeholder="client@exemple.be">
-                </div>
-            </div>
-
-            <!-- Slider d'heures (comme dans le plan principal) -->
-            <div class="timeslot-slider-container" id="manualTimeslotSliderContainer">
-                <div class="timeslot-slider-header">
-                    <span class="timeslot-slider-label">Créneau horaire</span>
-                    <span class="timeslot-current" id="manualTimeslotCurrent">--:--</span>
-                </div>
-                <div class="timeslot-slider-wrapper">
-                    <input type="range" class="timeslot-slider" id="manualTimeslotSlider"
-                           min="0" max="5" value="0" oninput="onManualTimeslotSliderChange(this.value)">
-                </div>
-                <div class="timeslot-labels" id="manualTimeslotLabels">
-                    <!-- Les labels seront générés par JavaScript -->
-                </div>
-            </div>
-
-            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+</div>
+</div>
+</div>
+<!-- Modal Refus -->
+<div class="modal-overlay" id="refuseModal">
+<div class="modal">
+<h2 class="modal-title">Refuser la réservation</h2>
+<p class="modal-subtitle" id="refuseModalSubtitle"></p>
+<div class="form-group">
+<label>Message au client</label>
+<textarea id="refuseMessage" placeholder="Ex: Nous sommes désolés, mais nous sommes complets..."></textarea>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('refuseModal')">Annuler</button>
+<button class="btn btn-send" onclick="confirmRefuse()">Envoyer le refus</button>
+</div>
+</div>
+</div>
+<!-- Modal Fermeture -->
+<div class="modal-overlay" id="closureModal">
+<div class="modal">
+<h2 class="modal-title">Ajouter une fermeture</h2>
+<div class="form-group">
+<label>Date</label>
+<input id="closureDate" type="date"/>
+</div>
+<div class="form-group">
+<label>Heure de début</label>
+<input id="closureStart" type="time" value="12:00"/>
+</div>
+<div class="form-group">
+<label>Heure de fin</label>
+<input id="closureEnd" type="time" value="14:30"/>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('closureModal')">Annuler</button>
+<button class="btn btn-add" onclick="addClosure()">Ajouter</button>
+</div>
+</div>
+</div>
+<!-- NOUVEAU: Modal Ajout manuel de réservation -->
+<div class="modal-overlay" id="manualReservationModal">
+<div class="modal">
+<h2 class="modal-title">Ajouter une réservation</h2>
+<p class="modal-subtitle">Pour les réservations par téléphone</p>
+<div class="form-group">
+<label>Date *</label>
+<input id="manualDate" type="date"/>
+</div>
+<div class="form-group">
+<label>Nombre de personnes *</label>
+<input id="manualGuests" max="32" min="1" type="number" value="2"/>
+</div>
+<div class="form-group">
+<label>Nom du client *</label>
+<input id="manualName" placeholder="Ex: Dupont" type="text"/>
+</div>
+<div class="form-row">
+<div class="form-group">
+<label>Téléphone</label>
+<input id="manualPhone" placeholder="+32 4XX XX XX XX" type="tel"/>
+</div>
+<div class="form-group">
+<label>Email</label>
+<input id="manualEmail" placeholder="client@exemple.be" type="email"/>
+</div>
+</div>
+<!-- Slider d'heures (comme dans le plan principal) -->
+<div class="timeslot-slider-container" id="manualTimeslotSliderContainer">
+<div class="timeslot-slider-header">
+<span class="timeslot-slider-label">Créneau horaire</span>
+<span class="timeslot-current" id="manualTimeslotCurrent">--:--</span>
+</div>
+<div class="timeslot-slider-wrapper">
+<input class="timeslot-slider" id="manualTimeslotSlider" max="5" min="0" oninput="onManualTimeslotSliderChange(this.value)" type="range" value="0"/>
+</div>
+<div class="timeslot-labels" id="manualTimeslotLabels">
+<!-- Les labels seront générés par JavaScript -->
+</div>
+</div>
+<label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
                 Plan des tables :
             </label>
-
-            <!-- Alerte de conflit -->
-            <div class="conflict-alert" id="manualConflictAlert">
-                <div class="conflict-alert-title">⚠️ Conflit détecté</div>
-                <div class="conflict-alert-text" id="manualConflictText"></div>
-            </div>
-
-            <!-- Plan des tables avec disposition spatiale -->
-            <div class="modal-floor-plan" id="manualFloorPlan">
-                <div class="floor-grid" id="manualFloorGrid">
-                    <p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Sélectionnez une date et une heure</p>
-                </div>
-                <div class="floor-plan-legend">
-                    <div class="legend-item"><span class="legend-color libre"></span> Libre</div>
-                    <div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
-                    <div class="legend-item"><span class="legend-color complete"></span> Complète</div>
-                    <div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
-                    <div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
-                </div>
-            </div>
-
-            <div class="selected-tables-summary">
-                <span>Tables sélectionnées :</span>
-                <span class="tables-list" id="manualSelectedTablesList">Aucune</span>
-            </div>
-            
-            <div class="form-group" style="margin-top: 1rem;">
-                <label>Remarque du client (optionnel)</label>
-                <input type="text" id="manualRemarque" placeholder="Ex: Anniversaire, allergie, chaise bébé...">
-            </div>
-
-            <div class="form-group">
-                <label>Commentaire interne (optionnel)</label>
-                <input type="text" id="manualComment" placeholder="Note interne pour l'équipe...">
-            </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('manualReservationModal')">Annuler</button>
-                <button class="btn btn-add-green" id="manualReservationBtn" onclick="createManualReservation()">
+<!-- Alerte de conflit -->
+<div class="conflict-alert" id="manualConflictAlert">
+<div class="conflict-alert-title">⚠️ Conflit détecté</div>
+<div class="conflict-alert-text" id="manualConflictText"></div>
+</div>
+<!-- Plan des tables avec disposition spatiale -->
+<div class="modal-floor-plan" id="manualFloorPlan">
+<div class="floor-grid" id="manualFloorGrid">
+<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Sélectionnez une date et une heure</p>
+</div>
+<div class="floor-plan-legend">
+<div class="legend-item"><span class="legend-color libre"></span> Libre</div>
+<div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
+<div class="legend-item"><span class="legend-color complete"></span> Complète</div>
+<div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
+<div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
+</div>
+</div>
+<div class="selected-tables-summary">
+<span>Tables sélectionnées :</span>
+<span class="tables-list" id="manualSelectedTablesList">Aucune</span>
+</div>
+<div class="form-group" style="margin-top: 1rem;">
+<label>Remarque du client (optionnel)</label>
+<input id="manualRemarque" placeholder="Ex: Anniversaire, allergie, chaise bébé..." type="text"/>
+</div>
+<div class="form-group">
+<label>Commentaire interne (optionnel)</label>
+<input id="manualComment" placeholder="Note interne pour l'équipe..." type="text"/>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('manualReservationModal')">Annuler</button>
+<button class="btn btn-add-green" id="manualReservationBtn" onclick="createManualReservation()">
                     ✓ Créer la réservation
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- NOUVEAU: Modal Suppression -->
-    <div class="modal-overlay" id="deleteModal">
-        <div class="modal">
-            <h2 class="modal-title">Supprimer la réservation</h2>
-            <p class="modal-subtitle" id="deleteModalSubtitle"></p>
-            
-            <div class="warning-text">
+</div>
+</div>
+</div>
+<!-- NOUVEAU: Modal Suppression -->
+<div class="modal-overlay" id="deleteModal">
+<div class="modal">
+<h2 class="modal-title">Supprimer la réservation</h2>
+<p class="modal-subtitle" id="deleteModalSubtitle"></p>
+<div class="warning-text">
                 ⚠️ Cette action est irréversible. La réservation sera définitivement supprimée et aucun email ne sera envoyé au client.
             </div>
-            
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('deleteModal')">Annuler</button>
-                <button class="btn btn-send" onclick="confirmDelete()">🗑️ Supprimer</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Modifier le nombre de couverts -->
-    <div class="modal-overlay" id="editGuestsModal">
-        <div class="modal">
-            <h2 class="modal-title">Modifier le nombre de couverts</h2>
-            <p class="modal-subtitle" id="editGuestsModalSubtitle"></p>
-
-            <div class="form-group">
-                <label>Nombre de personnes</label>
-                <input type="number" id="editGuestsInput" min="1" max="32" value="2" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-size: 1rem;">
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('editGuestsModal')">Annuler</button>
-                <button class="btn btn-confirm" onclick="confirmEditGuests()">Valider</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Modifier la remarque -->
-    <div class="modal-overlay" id="editRemarqueModal">
-        <div class="modal">
-            <h2 class="modal-title">Modifier la remarque</h2>
-            <p class="modal-subtitle" id="editRemarqueModalSubtitle"></p>
-
-            <div class="form-group">
-                <label>Remarque du client</label>
-                <textarea id="editRemarqueInput" rows="3" placeholder="Ex: Anniversaire, allergie, chaise bébé..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('editRemarqueModal')">Annuler</button>
-                <button class="btn btn-confirm" onclick="confirmEditRemarque()">Valider</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Modifier la réservation (depuis le plan des tables) -->
-    <div class="modal-overlay" id="editReservationModal">
-        <div class="modal">
-            <h2 class="modal-title">Modifier la réservation</h2>
-            <p class="modal-subtitle" id="editReservationSubtitle"></p>
-
-            <div class="form-group">
-                <label>Nombre de personnes</label>
-                <input type="number" id="editResGuests" min="1" max="32" value="2" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-size: 1rem;">
-            </div>
-
-            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('deleteModal')">Annuler</button>
+<button class="btn btn-send" onclick="confirmDelete()">🗑️ Supprimer</button>
+</div>
+</div>
+</div>
+<!-- Modal Modifier le nombre de couverts -->
+<div class="modal-overlay" id="editGuestsModal">
+<div class="modal">
+<h2 class="modal-title">Modifier le nombre de couverts</h2>
+<p class="modal-subtitle" id="editGuestsModalSubtitle"></p>
+<div class="form-group">
+<label>Nombre de personnes</label>
+<input id="editGuestsInput" max="32" min="1" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-size: 1rem;" type="number" value="2"/>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('editGuestsModal')">Annuler</button>
+<button class="btn btn-confirm" onclick="confirmEditGuests()">Valider</button>
+</div>
+</div>
+</div>
+<!-- Modal Modifier la remarque -->
+<div class="modal-overlay" id="editRemarqueModal">
+<div class="modal">
+<h2 class="modal-title">Modifier la remarque</h2>
+<p class="modal-subtitle" id="editRemarqueModalSubtitle"></p>
+<div class="form-group">
+<label>Remarque du client</label>
+<textarea id="editRemarqueInput" placeholder="Ex: Anniversaire, allergie, chaise bébé..." rows="3" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('editRemarqueModal')">Annuler</button>
+<button class="btn btn-confirm" onclick="confirmEditRemarque()">Valider</button>
+</div>
+</div>
+</div>
+<!-- Modal Modifier la réservation (depuis le plan des tables) -->
+<div class="modal-overlay" id="editReservationModal">
+<div class="modal">
+<h2 class="modal-title">Modifier la réservation</h2>
+<p class="modal-subtitle" id="editReservationSubtitle"></p>
+<div class="form-group">
+<label>Nombre de personnes</label>
+<input id="editResGuests" max="32" min="1" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-size: 1rem;" type="number" value="2"/>
+</div>
+<label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
                 Créneau horaire :
             </label>
-
-            <!-- Boutons de créneaux pour l'édition -->
-            <div id="editResTimeslotContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
-            </div>
-
-            <!-- Alerte de conflit -->
-            <div class="conflict-alert" id="editResConflictAlert">
-                <div class="conflict-alert-title">⚠️ Conflit détecté</div>
-                <div class="conflict-alert-text" id="editResConflictText"></div>
-            </div>
-
-            <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
+<!-- Boutons de créneaux pour l'édition -->
+<div id="editResTimeslotContainer" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+</div>
+<!-- Alerte de conflit -->
+<div class="conflict-alert" id="editResConflictAlert">
+<div class="conflict-alert-title">⚠️ Conflit détecté</div>
+<div class="conflict-alert-text" id="editResConflictText"></div>
+</div>
+<label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 0.5rem; display: block;">
                 Tables :
             </label>
-
-            <!-- Plan des tables -->
-            <div class="modal-floor-plan" id="editResFloorPlan">
-                <div class="floor-grid" id="editResFloorGrid">
-                    <p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Chargement...</p>
-                </div>
-                <div class="floor-plan-legend">
-                    <div class="legend-item"><span class="legend-color libre"></span> Libre</div>
-                    <div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
-                    <div class="legend-item"><span class="legend-color complete"></span> Complète</div>
-                    <div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
-                    <div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
-                </div>
-            </div>
-
-            <div class="selected-tables-summary">
-                <span>Tables sélectionnées :</span>
-                <span class="tables-list" id="editResSelectedTablesList">Aucune</span>
-            </div>
-
-            <div class="form-group" style="margin-top: 0.5rem;">
-                <label>Remarque</label>
-                <textarea id="editResRemarque" rows="2" placeholder="Ex: Anniversaire, allergie, chaise bébé..." style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
-            </div>
-
-            <div class="modal-actions">
-                <button class="btn btn-cancel" onclick="closeModal('editReservationModal')">Annuler</button>
-                <button class="btn btn-confirm" id="editResSaveBtn" onclick="saveEditReservation()">
+<!-- Plan des tables -->
+<div class="modal-floor-plan" id="editResFloorPlan">
+<div class="floor-grid" id="editResFloorGrid">
+<p style="color: var(--gris); grid-column: 1/-1; text-align: center;">Chargement...</p>
+</div>
+<div class="floor-plan-legend">
+<div class="legend-item"><span class="legend-color libre"></span> Libre</div>
+<div class="legend-item"><span class="legend-color partielle"></span> Partielle</div>
+<div class="legend-item"><span class="legend-color complete"></span> Complète</div>
+<div class="legend-item"><span class="legend-color buffer"></span> Buffer</div>
+<div class="legend-item"><span class="legend-color selected"></span> Sélectionnée</div>
+</div>
+</div>
+<div class="selected-tables-summary">
+<span>Tables sélectionnées :</span>
+<span class="tables-list" id="editResSelectedTablesList">Aucune</span>
+</div>
+<div class="form-group" style="margin-top: 0.5rem;">
+<label>Remarque</label>
+<textarea id="editResRemarque" placeholder="Ex: Anniversaire, allergie, chaise bébé..." rows="2" style="width: 100%; padding: 0.75rem; border: 2px solid var(--gris-bordure); font-family: inherit; font-size: 0.9rem; resize: vertical;"></textarea>
+</div>
+<div class="modal-actions">
+<button class="btn btn-cancel" onclick="closeModal('editReservationModal')">Annuler</button>
+<button class="btn btn-confirm" id="editResSaveBtn" onclick="saveEditReservation()">
                     ✓ Enregistrer
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <script>
+</div>
+</div>
+</div>
+<script>
         // ============================================
         // CONFIGURATION
         // ============================================
@@ -4399,11 +4341,6 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">📅</div>
                         <p>Aucune réservation pour cette date</p>
-                    <div class="ab-attribution" style="text-align:center;margin-top:2rem;padding-top:1rem;border-top:1px solid rgba(128,128,128,0.25);font-size:0.8rem;opacity:0.65;">
-  <a href="https://www.linkedin.com/in/antonin-bareau/" target="_blank" rel="noopener" style="font-weight:bold;color:inherit;text-decoration:none;">Antonin Bareau</a>
-  &nbsp;&mdash;&nbsp;
-  <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;">Licence CC BY-SA 4.0</a>
-</div>
 </div>
                 `;
                 return;
@@ -4450,6 +4387,5 @@
             updateMobileDateText();
         });
     </script>
-
 </body>
 </html>
