@@ -136,14 +136,42 @@
         }
 
         .closure-banner {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffc107;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(110deg, #2a3593 0%, #3a47c0 50%, #2a3593 100%);
+            color: #fff;
+            border-top: 2px solid var(--jaune);
+            border-bottom: 2px solid var(--jaune);
             padding: 0.85rem 1.5rem;
             text-align: center;
             font-size: 0.95rem;
-            font-weight: 500;
+            font-weight: 600;
             letter-spacing: 0.02em;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+        }
+
+        .closure-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -150%;
+            width: 60%;
+            height: 100%;
+            background: linear-gradient(
+                100deg,
+                rgba(255,255,255,0) 0%,
+                rgba(236,217,0,0.15) 35%,
+                rgba(255,255,255,0.55) 50%,
+                rgba(236,217,0,0.15) 65%,
+                rgba(255,255,255,0) 100%
+            );
+            animation: bannerShimmer 4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes bannerShimmer {
+            0% { left: -150%; }
+            55%, 100% { left: 150%; }
         }
 
         /* Container principal */
@@ -258,6 +286,88 @@
             opacity: 0.4;
             cursor: not-allowed;
             text-decoration: line-through;
+        }
+
+        /* Soirée de fermeture — case festive avec effet paillettes */
+        .date-option.special-event {
+            border-color: var(--jaune);
+            background: linear-gradient(135deg, #fff8d6 0%, #ffe9a0 45%, #fff8d6 100%);
+            background-size: 200% 200%;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 0 1px var(--jaune), 0 4px 14px rgba(236, 217, 0, 0.45);
+            animation: eventGlow 2.6s ease-in-out infinite, eventGradient 5s ease infinite;
+        }
+
+        .date-option.special-event .date-day,
+        .date-option.special-event .date-number,
+        .date-option.special-event .date-month {
+            position: relative;
+            z-index: 2;
+            color: var(--noir);
+        }
+
+        /* Couche paillettes scintillantes */
+        .date-option.special-event::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background-image:
+                radial-gradient(circle, rgba(255,255,255,0.95) 1px, transparent 1.6px),
+                radial-gradient(circle, rgba(236,217,0,0.9) 1px, transparent 1.6px),
+                radial-gradient(circle, rgba(255,255,255,0.85) 1px, transparent 1.5px);
+            background-size: 22px 22px, 30px 30px, 16px 16px;
+            background-position: 0 0, 8px 12px, 14px 4px;
+            animation: sparkleFloat 1.8s linear infinite;
+            pointer-events: none;
+        }
+
+        /* Petite étoile scintillante dans le coin */
+        .date-option.special-event::after {
+            content: '✨';
+            position: absolute;
+            top: 1px;
+            right: 3px;
+            z-index: 2;
+            font-size: 0.7rem;
+            animation: sparkleTwinkle 1.4s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        .date-option.special-event.selected {
+            background: linear-gradient(135deg, #ffe9a0 0%, var(--jaune) 50%, #ffe9a0 100%);
+            background-size: 200% 200%;
+        }
+
+        @keyframes eventGlow {
+            0%, 100% { box-shadow: 0 0 0 1px var(--jaune), 0 4px 14px rgba(236, 217, 0, 0.4); }
+            50% { box-shadow: 0 0 0 1px var(--jaune), 0 6px 22px rgba(236, 217, 0, 0.75); }
+        }
+
+        @keyframes eventGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        @keyframes sparkleFloat {
+            0% { background-position: 0 0, 8px 12px, 14px 4px; opacity: 0.55; }
+            50% { opacity: 1; }
+            100% { background-position: 0 22px, 8px 42px, 14px 20px; opacity: 0.55; }
+        }
+
+        @keyframes sparkleTwinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+            50% { opacity: 1; transform: scale(1.15) rotate(15deg); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .closure-banner::before,
+            .date-option.special-event,
+            .date-option.special-event::before,
+            .date-option.special-event::after {
+                animation: none;
+            }
         }
 
         /* Navigation des dates */
@@ -802,8 +912,8 @@
 <p data-i18n="hero.subtitle">Pop-up restaurant • Bruxelles</p>
 </div>
 </section>
-<div class="closure-banner">
-        Nous serons exceptionnellement fermés du 13 au 19 avril.
+<div class="closure-banner" data-i18n="banner.closure">
+        🎉 Lundi 29/06, grande soirée de fermeture, réservation recommandée ✨
     </div>
 <div class="container" id="bookingForm">
 <div class="steps">
@@ -962,8 +1072,23 @@
         const DATE_CONFIG = {
             DATES_PER_PAGE: 10,      // Nombre de dates affichées par page
             START_DATE: new Date(2026, 1, 11),  // 11 février 2026
-            END_DATE: new Date(2026, 5, 30)     // 30 juin 2026
+            END_DATE: new Date(2026, 5, 29)     // 29 juin 2026 (soirée de fermeture, dernière date)
         };
+
+        // Événements spéciaux : ouvertures exceptionnelles en dehors des horaires habituels.
+        // La soirée de fermeture du lundi 29/06 propose un unique créneau à 19h.
+        const SPECIAL_EVENTS = {
+            '2026-06-29': {
+                open: true,
+                services: [{ labelKey: 'event.serviceLabel', label: 'Soirée de fermeture', start: '19:00', end: '23:00', slots: ['19:00'] }]
+            }
+        };
+
+        // Retourne les horaires applicables pour une date donnée (événement spécial prioritaire)
+        function getDaySchedule(dateStr, dayOfWeek) {
+            if (dateStr && SPECIAL_EVENTS[dateStr]) return SPECIAL_EVENTS[dateStr];
+            return schedule[dayOfWeek];
+        }
 
         // Formate une date en YYYY-MM-DD en heure locale (évite le décalage UTC de toISOString)
         function formatLocalDate(date) {
@@ -1029,7 +1154,9 @@
                 'cookie.title': 'Pas de cookies ici !',
                 'cookie.text': 'Aucun cookie n\'est utilisé lors de cette réservation. Nos clients ne sont pas des produits ! Nous préparons avec amour de beaux produits pour eux !<br><br>Vous pouvez toutefois nous laisser vos coordonnées pour être tenu(e) au courant de nos activités via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">notre site</a>.',
                 'cookie.btn': 'J\'ai compris',
-                'footer.dataPolicy': 'Politique de traitement des données'
+                'footer.dataPolicy': 'Politique de traitement des données',
+                'banner.closure': '🎉 Lundi 29/06, grande soirée de fermeture, réservation recommandée ✨',
+                'event.serviceLabel': 'Soirée de fermeture'
             },
             en: {
                 'hero.title': 'Book a table',
@@ -1071,7 +1198,9 @@
                 'cookie.title': 'No cookies here!',
                 'cookie.text': 'No cookies are used during this reservation. Our customers are not products! We prepare beautiful products with love for them!<br><br>However, you can leave us your contact details to stay informed about our activities via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">our website</a>.',
                 'cookie.btn': 'Got it',
-                'footer.dataPolicy': 'Data Processing Policy'
+                'footer.dataPolicy': 'Data Processing Policy',
+                'banner.closure': '🎉 Monday 29/06, grand closing night — booking recommended ✨',
+                'event.serviceLabel': 'Closing night'
             },
             nl: {
                 'hero.title': 'Reserveer een tafel',
@@ -1113,7 +1242,9 @@
                 'cookie.title': 'Geen cookies hier!',
                 'cookie.text': 'Er worden geen cookies gebruikt tijdens deze reservering. Onze klanten zijn geen producten! We bereiden met liefde mooie producten voor hen!<br><br>U kunt ons echter uw contactgegevens achterlaten om op de hoogte te blijven van onze activiteiten via <a href="https://sites.google.com/view/piafbxl/fr" target="_blank">onze website</a>.',
                 'cookie.btn': 'Begrepen',
-                'footer.dataPolicy': 'Gegevensverwerkingsbeleid'
+                'footer.dataPolicy': 'Gegevensverwerkingsbeleid',
+                'banner.closure': '🎉 Maandag 29/06, grote sluitingsavond, reserveren aanbevolen ✨',
+                'event.serviceLabel': 'Sluitingsavond'
             }
         };
 
@@ -1236,7 +1367,9 @@
                 date.setDate(startDate.getDate() + dayIndex);
 
                 const dayOfWeek = date.getDay();
-                const isOpen = schedule[dayOfWeek].open;
+                const dateStr = formatLocalDate(date);
+                const isSpecialEvent = !!SPECIAL_EVENTS[dateStr];
+                const isOpen = getDaySchedule(dateStr, dayOfWeek).open;
                 const t = i18n[state.lang];
 
                 // Empêcher les réservations le jour même
@@ -1255,7 +1388,10 @@
                 const isSelectable = isOpen && !isToday && !isPast && !isClosed;
 
                 const div = document.createElement('div');
-                div.className = `date-option ${!isSelectable ? 'disabled' : ''}`;
+                div.className = `date-option ${!isSelectable ? 'disabled' : ''} ${isSpecialEvent && isSelectable ? 'special-event' : ''}`.trim();
+                if (isSpecialEvent) {
+                    div.title = t['event.serviceLabel'] || 'Soirée de fermeture';
+                }
                 div.innerHTML = `
                     <div class="date-day">${t.days[dayOfWeek]}</div>
                     <div class="date-number">${date.getDate()}</div>
@@ -1263,7 +1399,7 @@
                 `;
 
                 if (isSelectable) {
-                    div.dataset.date = formatLocalDate(date);
+                    div.dataset.date = dateStr;
                     div.dataset.day = dayOfWeek;
                     div.onclick = () => selectDate(div);
                 }
@@ -1350,7 +1486,7 @@
             const container = document.getElementById('timeSlotsContent');
             container.innerHTML = '';
 
-            const daySchedule = schedule[dayOfWeek];
+            const daySchedule = getDaySchedule(state.date, dayOfWeek);
             if (!daySchedule.open) return false;
 
             const t = i18n[state.lang];
@@ -1360,7 +1496,7 @@
             daySchedule.services.forEach(service => {
                 const label = document.createElement('div');
                 label.className = 'service-label';
-                label.textContent = service.label;
+                label.textContent = service.labelKey && t[service.labelKey] ? t[service.labelKey] : service.label;
                 container.appendChild(label);
 
                 const grid = document.createElement('div');
@@ -1408,13 +1544,14 @@
             const container = document.getElementById('timeSlotsContent');
             container.innerHTML = '';
             
-            const daySchedule = schedule[dayOfWeek];
+            const daySchedule = getDaySchedule(state.date, dayOfWeek);
             if (!daySchedule.open) return;
-            
+
+            const t = i18n[state.lang];
             daySchedule.services.forEach(service => {
                 const label = document.createElement('div');
                 label.className = 'service-label';
-                label.textContent = service.label;
+                label.textContent = service.labelKey && t[service.labelKey] ? t[service.labelKey] : service.label;
                 container.appendChild(label);
                 
                 const grid = document.createElement('div');

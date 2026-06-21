@@ -39,10 +39,15 @@ const CONFIG = {
     maxGroupSize: 8,
     minGuests: 1
   },
+  // Ouvertures exceptionnelles en dehors des horaires habituels.
+  // Soirée de fermeture du lundi 29/06 : unique créneau à 19h.
+  SPECIAL_EVENTS: {
+    '2026-06-29': { open: true, services: [{ start: '19:00', end: '23:00', slots: ['19:00'] }] }
+  },
   OCCUPATION_DURATION: 120, // durée d'occupation en minutes (2 heures)
   MIN_ADVANCE_HOURS: 2,
   START_DATE: '2026-02-11',  // Première date proposée: 11 février 2026
-  END_DATE: '2026-06-30',    // Dernière date proposée: 30 juin 2026
+  END_DATE: '2026-06-29',    // Dernière date proposée: 29 juin 2026 (soirée de fermeture)
   SLOT_INTERVAL: 15
 };
 
@@ -417,12 +422,14 @@ function checkAdminAccess(secret) {
 function getAvailability(dateStr, guests) {
   const date = new Date(dateStr);
   const dayOfWeek = date.getDay();
-  const schedule = CONFIG.SCHEDULE[dayOfWeek];
+  const normalizedDateStr = normalizeDate(dateStr);
+
+  // Les événements spéciaux (ex: soirée de fermeture) priment sur les horaires habituels
+  const schedule = CONFIG.SPECIAL_EVENTS[normalizedDateStr] || CONFIG.SCHEDULE[dayOfWeek];
 
   if (!schedule.open) return { success: true, available: false, reason: 'closed' };
 
   // Vérifier si le jour est bloqué par l'admin
-  const normalizedDateStr = normalizeDate(dateStr);
   if (isDayBlockedInternal(normalizedDateStr)) {
     return { success: true, available: false, reason: 'blocked' };
   }

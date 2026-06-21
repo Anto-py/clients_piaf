@@ -2392,7 +2392,7 @@
         function initConfirmTimeslotSlider(reservation) {
             const date = new Date(reservation.date);
             const dayOfWeek = date.getDay();
-            const schedule = SCHEDULE[dayOfWeek];
+            const schedule = getScheduleForDate(date, dayOfWeek);
             const container = document.getElementById('confirmTimeslotSliderContainer');
             const slider = document.getElementById('confirmTimeslotSlider');
             const labelsContainer = document.getElementById('confirmTimeslotLabels');
@@ -2772,7 +2772,7 @@
             const dateInput = document.getElementById('manualDate');
             const date = new Date(dateInput.value);
             const dayOfWeek = date.getDay();
-            const schedule = SCHEDULE[dayOfWeek];
+            const schedule = getScheduleForDate(date, dayOfWeek);
             const container = document.getElementById('manualTimeslotSliderContainer');
             const slider = document.getElementById('manualTimeslotSlider');
             const labelsContainer = document.getElementById('manualTimeslotLabels');
@@ -3146,7 +3146,7 @@
         function initEditResTimeslotButtons(reservation) {
             const date = new Date(reservation.date);
             const dayOfWeek = date.getDay();
-            const schedule = SCHEDULE[dayOfWeek];
+            const schedule = getScheduleForDate(date, dayOfWeek);
             const container = document.getElementById('editResTimeslotContainer');
 
             if (!schedule || !schedule.open || !schedule.slots || schedule.slots.length === 0) {
@@ -3507,6 +3507,23 @@
             6: { open: true, slots: ['12:00', '12:30', '13:00', '13:30'] }  // Samedi
         };
 
+        // Ouvertures exceptionnelles (miroir du backend) : soirée de fermeture du 29/06 à 19h
+        const SPECIAL_EVENTS = {
+            '2026-06-29': { open: true, slots: ['19:00'] }
+        };
+
+        // Retourne les horaires applicables pour une date (événement spécial prioritaire)
+        function getScheduleForDate(date, dayOfWeek) {
+            if (date instanceof Date && !isNaN(date)) {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                const key = `${y}-${m}-${d}`;
+                if (SPECIAL_EVENTS[key]) return SPECIAL_EVENTS[key];
+            }
+            return SCHEDULE[dayOfWeek];
+        }
+
         // Créneau horaire actuellement sélectionné (ex: "11:00", "12:30")
         let selectedTimeslot = null;
         // Liste des créneaux disponibles pour le jour sélectionné
@@ -3530,7 +3547,7 @@
         function initTimeslotSlider(skipRender = false) {
             const date = new Date(state.selectedDate);
             const dayOfWeek = date.getDay();
-            const schedule = SCHEDULE[dayOfWeek];
+            const schedule = getScheduleForDate(date, dayOfWeek);
             const container = document.getElementById('timeslotSliderContainer');
             const slider = document.getElementById('timeslotSlider');
             const labelsContainer = document.getElementById('timeslotLabels');
